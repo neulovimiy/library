@@ -1,0 +1,39 @@
+<!-- views/books.ejs -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Список книг</title>
+</head>
+<body>
+  <h1>Список доступных книг</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Название</th>
+        <th>Автор</th>
+        <th>Жанр</th>
+        <th>Год публикации</th>
+        <th>Статус</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% books.forEach(function(book) { %>
+        <tr>
+          <td><%= book.book_id %></td>
+          <td><%= book.title %></td>
+          <td><%= book.author %></td>
+          <td><%= book.genre %></td>
+          <td><%= book.published_year %></td>
+          <td><%= book.availability_status %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <br />
+  <a href="/">Выйти</a>
+</body>
+</html>
