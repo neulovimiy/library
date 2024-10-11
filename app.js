@@ -147,11 +147,90 @@ app.post('/login', (req, res) => {
   });
 });
 
-app.get('/books', authenticateToken, (req, res) => {
-  connection.query('SELECT * FROM Books', (err, results) => {
+// Маршрут для взятия книги
+app.post('/books/take/:id', authenticateToken, (req, res) => {
+  const bookId = req.params.id;
+
+  // Проверка доступности книги
+  const query = 'SELECT available_count FROM Books WHERE book_id = ?';
+  connection.query(query, [bookId], (err, results) => {
     if (err) throw err;
 
-    // Рендерим страницу с книгами
+    if (results.length > 0 && results[0].available_count > 0) {
+      const availableCount = results[0].available_count - 1;
+
+      // Обновляем количество доступных книг и статус
+      const updateQuery = `
+        UPDATE Books
+        SET available_count = ?, availability_status = ?
+        WHERE book_id = ?
+      `;
+      const newStatus = availableCount > 0 ? 'available' : 'unavailable';
+      connection.query(updateQuery, [availableCount, newStatus, bookId], (err, results) => {
+        if (err) throw err;
+        res.redirect('/books');  // Перенаправляем обратно на страницу книг
+      });
+    } else {
+      res.status(400).send('Книга больше недоступна');
+    }
+  });
+});
+
+// Маршрут для возврата книги
+app.post('/books/return/:id', authenticateToken, (req, res) => {
+  const bookId = req.params.id;
+  const userId = req.user.userId; // Получаем ID пользователя из токена
+
+  // Проверяем, брал ли пользователь эту книгу и не вернул ли её уже
+  const query = `
+    SELECT * FROM Loans
+    WHERE book_id = ? AND user_id = ? AND return_date IS NULL
+  `;
+  connection.query(query, [bookId, userId], (err, results) => {
+    if (err) throw err;
+
+    if (results.length > 0) {
+      // Обновляем запись в Loans с датой возврата
+      const updateLoanQuery = `
+        UPDATE Loans
+        SET return_date = NOW()
+        WHERE loan_id = ?
+      `;
+      connection.query(updateLoanQuery, [results[0].loan_id], (err) => {
+        if (err) throw err;
+
+        // Увеличиваем количество доступных книг и обновляем статус
+        const updateBookQuery = `
+          UPDATE Books
+          SET available_count = available_count + 1, 
+              availability_status = IF(available_count + 1 > 0, 'available', 'unavailable')
+          WHERE book_id = ?
+        `;
+        connection.query(updateBookQuery, [bookId], (err) => {
+          if (err) throw err;
+          res.redirect('/books'); // Возвращаемся на страницу книг
+        });
+      });
+    } else {
+      res.status(400).send('Вы не брали эту книгу или уже вернули её');
+    }
+  });
+});
+
+app.get('/books', authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем ID пользователя из токена
+  
+  // Запрос для получения всех книг и информации о том, взял ли их текущий пользователь
+  const query = `
+  SELECT Books.*, Loans.loan_id, Loans.return_date 
+  FROM Books
+  LEFT JOIN Loans ON Books.book_id = Loans.book_id AND Loans.user_id = ? AND Loans.return_date IS NULL
+`;
+
+  connection.query(query, [userId], (err, results) => {
+    if (err) throw err;
+
+    // Рендерим страницу с книгами и передаем информацию о том, взяты ли книги
     res.render('books', { books: results });
   });
 });

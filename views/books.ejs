@@ -84,6 +84,7 @@
           <th onclick="sortTable(3, 'text')">Жанр</th>
           <th onclick="sortTable(4, 'number')">Год публикации</th>
           <th onclick="sortTable(5, 'text')">Статус</th>
+          <th>Возможности</th> <!-- Новый заголовок для кнопок -->
         </tr>
       </thead>
       <tbody>
@@ -95,10 +96,26 @@
             <td><%= book.genre %></td>
             <td><%= book.published_year %></td>
             <td><%= book.availability_status %></td>
+            <td>
+              <% if (!book.loan_id) { %>
+                <% if (book.availability_status === 'available' && book.available_count > 0) { %>
+                  <form action="/books/take/<%= book.book_id %>" method="POST">
+                    <button type="submit" class="btn">Взять</button>
+                  </form>
+                <% } %>
+              <% } %>
+    
+              <% if (book.loan_id && !book.return_date) { %>
+                <form action="/books/return/<%= book.book_id %>" method="POST">
+                  <button type="submit" class="btn">Вернуть</button>
+                </form>
+              <% } %>
+            </td>
           </tr>
         <% }); %>
       </tbody>
     </table>
+    
 
     <br />
     <a href="/" class="btn">Выйти</a>

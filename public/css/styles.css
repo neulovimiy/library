@@ -71,12 +71,41 @@ body {
     background-color: #f9f9f9;
   }
   
-  /* Скролл для таблиц */
-  table {
-    max-height: 500px;
-    overflow-y: auto;
-    display: block;
-  }
+/* Стили для таблицы */
+table {
+  width: 80%;
+  margin: 20px auto;
+  border-collapse: collapse;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Центрируем содержимое столбца для функций */
+th:nth-child(6), td:nth-child(6) {
+  text-align: center; /* Центрируем содержимое столбца с кнопками */
+  white-space: nowrap; /* Отключаем перенос строк */
+}
+
+/* Стили для кнопок внутри таблицы */
+table .btn {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 2px; /* Немного уменьшаем отступы */
+  background-color: #4CAF50;
+  color: white;
+  text-align: center;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 14px; /* Немного уменьшаем шрифт, чтобы кнопки лучше вписались */
+}
+
+table .btn:hover {
+  background-color: #45a049;
+}
+
+
   
   a {
     display: inline-block; /* Для выравнивания по центру */
@@ -118,6 +147,13 @@ body {
 
 .btn:hover {
     background-color: #45a049;
+}
+
+.admin-buttons {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 
   
