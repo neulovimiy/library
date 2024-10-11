@@ -1,0 +1,42 @@
+<!-- views/loans.ejs -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Список выданных книг</title>
+  <link rel="stylesheet" href="/css/styles.css"> <!-- Подключаем стили -->
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center">Список выданных книг</h1>
+    
+    <!-- Таблица займов -->
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID займа</th>
+          <th>Название книги</th>
+          <th>Имя пользователя</th>
+          <th>Дата выдачи</th>
+          <th>Дата возврата</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% loans.forEach(function(loan) { %>
+          <tr>
+            <td><%= loan.loan_id %></td>
+            <td><%= loan.book_title %></td>
+            <td><%= loan.user_name %></td>
+            <td><%= loan.issue_date %></td>
+            <td><%= loan.return_date %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+    <br />
+    <a href="/" class="btn">Выйти</a>
+  </div>
+</body>
+</html>

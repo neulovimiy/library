@@ -12,6 +12,7 @@ app.use(cookieParser());
 
 // Подключаем модуль для авторизации (регистрация и логин)
 const authRoutes = require('./auth');
+app.use(express.static('public'));
 
 // Настроим парсинг данных формы
 app.use(bodyParser.urlencoded({ extended: true }));  // Для обработки данных форм
@@ -146,21 +147,6 @@ app.post('/login', (req, res) => {
   });
 });
 
-
-// Маршрут для получения всех пользователей (только для админов)
-app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {
-  connection.query('SELECT * FROM users', (err, results) => {
-    if (err) throw err;
-
-    // Форматируем дату перед отправкой
-    results.forEach(user => {
-      user.registration_date = new Date(user.registration_date).toLocaleString();
-    });
-
-    res.json(results);
-  });
-});
-
 app.get('/books', authenticateToken, (req, res) => {
   connection.query('SELECT * FROM Books', (err, results) => {
     if (err) throw err;
@@ -171,7 +157,21 @@ app.get('/books', authenticateToken, (req, res) => {
 });
 
 
-// Маршрут для получения всех выданных книг (только для админов)
+app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {
+  connection.query('SELECT * FROM users', (err, results) => {
+    if (err) throw err;
+
+    // Форматируем дату перед отправкой
+    results.forEach(user => {
+      user.registration_date = new Date(user.registration_date).toLocaleString();
+    });
+
+    // Отправляем данные на страницу
+    res.render('users', { users: results });
+  });
+});
+
+
 app.get('/loans', authenticateToken, authorizeAdmin, (req, res) => {
   const query = `
     SELECT 
@@ -184,18 +184,20 @@ app.get('/loans', authenticateToken, authorizeAdmin, (req, res) => {
     JOIN Books ON Loans.book_id = Books.book_id
     JOIN Users ON Loans.user_id = Users.user_id
   `;
-
   connection.query(query, (err, results) => {
     if (err) throw err;
 
     // Форматируем даты перед отправкой
-    results.forEach(loans => {
-      loans.issue_date = new Date(loans.issue_date).toLocaleString();
+    results.forEach(loan => {
+      loan.issue_date = new Date(loan.issue_date).toLocaleString();
+      loan.return_date = loan.return_date ? new Date(loan.return_date).toLocaleString() : 'Не возвращена';
     });
 
-    res.json(results);  // Отправляем результат как JSON
+    // Отправляем данные на страницу
+    res.render('loans', { loans: results });
   });
 });
+
 
 // Запуск сервера на порту 3000
 app.listen(3000, () => {

@@ -1,0 +1,123 @@
+/* Основные стили для страницы */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2; /* Светло-серый фон */
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+  
+  h1 {
+    text-align: center;
+    margin-top: 20px;
+    color: #444;
+  }
+  
+  form {
+    width: 300px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: center; /* Центрирование элементов формы */
+}
+
+  
+  input[type="text"], input[type="email"], input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  
+  button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50; /* Зеленая кнопка */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #45a049;
+  }
+  
+  /* Таблицы */
+  table {
+    width: 80%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  th {
+    background-color: #f2f2f2;
+    color: #333;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  /* Скролл для таблиц */
+  table {
+    max-height: 500px;
+    overflow-y: auto;
+    display: block;
+  }
+  
+  a {
+    display: inline-block; /* Для выравнивания по центру */
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    text-align: center;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 20px; /* Отступ сверху, чтобы не прилипала */
+}
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Контейнер для страниц */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  /* Стили для кнопок */
+  .btn {
+    display: inline-block; /* Делаем ссылку блочным элементом */
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    text-align: center;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none; /* Убираем подчеркивание у ссылки */
+}
+
+.btn:hover {
+    background-color: #45a049;
+}
+
+  

@@ -1,0 +1,42 @@
+<!-- views/users.ejs -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Список пользователей</title>
+  <link rel="stylesheet" href="/css/styles.css"> <!-- Подключаем стили -->
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center">Список пользователей</h1>
+    
+    <!-- Таблица пользователей -->
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Имя</th>
+          <th>Email</th>
+          <th>Роль</th>
+          <th>Дата регистрации</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(function(user) { %>
+          <tr>
+            <td><%= user.user_id %></td>
+            <td><%= user.name %></td>
+            <td><%= user.email %></td>
+            <td><%= user.role %></td>
+            <td><%= user.registration_date %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+    <br />
+    <a href="/" class="btn">Выйти</a>
+  </div>
+</body>
+</html>
