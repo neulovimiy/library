@@ -5,22 +5,85 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Список книг</title>
-  <link rel="stylesheet" href="/css/styles.css"> <!-- Подключаем стили -->
+  <link rel="stylesheet" href="/css/styles.css">
+  <script>
+    // Функция для сортировки таблицы
+    function sortTable(n, type) {
+      var table, rows, switching, i, x, y, shouldSwitch, dir, switchCount = 0;
+      table = document.getElementById("booksTable");
+      switching = true;
+      dir = "asc"; // Устанавливаем направление сортировки по умолчанию
+
+      while (switching) {
+        switching = false;
+        rows = table.rows;
+
+        // Проходим по всем строкам таблицы, кроме первой (заголовки)
+        for (i = 1; i < (rows.length - 1); i++) {
+          shouldSwitch = false;
+
+          // Получаем два элемента для сравнения
+          x = rows[i].getElementsByTagName("TD")[n];
+          y = rows[i + 1].getElementsByTagName("TD")[n];
+
+          // Проверяем направление сортировки
+          if (dir == "asc") {
+            if (type === 'number') {
+              if (parseInt(x.innerHTML) > parseInt(y.innerHTML)) {
+                shouldSwitch = true;
+                break;
+              }
+            } else {
+              if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                shouldSwitch = true;
+                break;
+              }
+            }
+          } else if (dir == "desc") {
+            if (type === 'number') {
+              if (parseInt(x.innerHTML) < parseInt(y.innerHTML)) {
+                shouldSwitch = true;
+                break;
+              }
+            } else {
+              if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                shouldSwitch = true;
+                break;
+              }
+            }
+          }
+        }
+
+        // Если было найдено, что нужно переключать строки, делаем это
+        if (shouldSwitch) {
+          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+          switching = true;
+          switchCount++;
+        } else {
+          // Если не было переключений, меняем направление сортировки
+          if (switchCount == 0 && dir == "asc") {
+            dir = "desc";
+            switching = true;
+          }
+        }
+      }
+    }
+  </script>
 </head>
 <body>
   <div class="container">
     <h1 class="text-center">Список доступных книг</h1>
-    
-    <!-- Таблица книг -->
-    <table class="table">
+
+    <!-- Таблица книг с возможностью сортировки -->
+    <table id="booksTable" class="table">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Название</th>
-          <th>Автор</th>
-          <th>Жанр</th>
-          <th>Год публикации</th>
-          <th>Статус</th>
+          <th onclick="sortTable(0, 'number')">ID</th>
+          <th onclick="sortTable(1, 'text')">Название</th>
+          <th onclick="sortTable(2, 'text')">Автор</th>
+          <th onclick="sortTable(3, 'text')">Жанр</th>
+          <th onclick="sortTable(4, 'number')">Год публикации</th>
+          <th onclick="sortTable(5, 'text')">Статус</th>
         </tr>
       </thead>
       <tbody>
