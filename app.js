@@ -150,6 +150,7 @@ app.post('/login', (req, res) => {
 // Маршрут для взятия книги
 app.post('/books/take/:id', authenticateToken, (req, res) => {
   const bookId = req.params.id;
+  const userId = req.user.userId;  // Получаем ID пользователя из токена
 
   // Проверка доступности книги
   const query = 'SELECT available_count FROM Books WHERE book_id = ?';
@@ -166,9 +167,18 @@ app.post('/books/take/:id', authenticateToken, (req, res) => {
         WHERE book_id = ?
       `;
       const newStatus = availableCount > 0 ? 'available' : 'unavailable';
-      connection.query(updateQuery, [availableCount, newStatus, bookId], (err, results) => {
+      connection.query(updateQuery, [availableCount, newStatus, bookId], (err) => {
         if (err) throw err;
-        res.redirect('/books');  // Перенаправляем обратно на страницу книг
+
+        // Вставляем новую запись в таблицу Loans
+        const loanQuery = `
+          INSERT INTO Loans (book_id, user_id, issue_date) 
+          VALUES (?, ?, NOW())
+        `;
+        connection.query(loanQuery, [bookId, userId], (err) => {
+          if (err) throw err;
+          res.redirect('/books');  // Перенаправляем обратно на страницу книг
+        });
       });
     } else {
       res.status(400).send('Книга больше недоступна');
@@ -216,24 +226,24 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
     }
   });
 });
-
 app.get('/books', authenticateToken, (req, res) => {
   const userId = req.user.userId; // Получаем ID пользователя из токена
   
   // Запрос для получения всех книг и информации о том, взял ли их текущий пользователь
   const query = `
-  SELECT Books.*, Loans.loan_id, Loans.return_date 
-  FROM Books
-  LEFT JOIN Loans ON Books.book_id = Loans.book_id AND Loans.user_id = ? AND Loans.return_date IS NULL
-`;
+    SELECT Books.*, Loans.loan_id, Loans.return_date 
+    FROM Books
+    LEFT JOIN Loans ON Books.book_id = Loans.book_id AND Loans.user_id = ? AND Loans.return_date IS NULL
+  `;
 
   connection.query(query, [userId], (err, results) => {
     if (err) throw err;
 
-    // Рендерим страницу с книгами и передаем информацию о том, взяты ли книги
-    res.render('books', { books: results });
+    // Передаем информацию о книгах и пользователе в шаблон
+    res.render('books', { books: results, user: req.user });
   });
 });
+
 
 
 app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {

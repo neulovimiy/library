@@ -84,7 +84,7 @@
           <th onclick="sortTable(3, 'text')">Жанр</th>
           <th onclick="sortTable(4, 'number')">Год публикации</th>
           <th onclick="sortTable(5, 'text')">Статус</th>
-          <th>Возможности</th> <!-- Новый заголовок для кнопок -->
+          <th>Возможности</th>
         </tr>
       </thead>
       <tbody>
@@ -103,9 +103,7 @@
                     <button type="submit" class="btn">Взять</button>
                   </form>
                 <% } %>
-              <% } %>
-    
-              <% if (book.loan_id && !book.return_date) { %>
+              <% } else { %>
                 <form action="/books/return/<%= book.book_id %>" method="POST">
                   <button type="submit" class="btn">Вернуть</button>
                 </form>
@@ -115,10 +113,15 @@
         <% }); %>
       </tbody>
     </table>
-    
 
-    <br />
-    <a href="/" class="btn">Выйти</a>
+    <!-- Кнопки администратора и "Выйти" -->
+    <div class="admin-buttons">
+      <% if (user && user.role === 'admin') { %>
+        <a href="/loans" class="btn btn-info">История</a>
+        <a href="/users" class="btn btn-primary">Пользователи</a>
+      <% } %>
+      <a href="/" class="btn btn-success">Выйти</a>
+    </div>
   </div>
 </body>
 </html>
