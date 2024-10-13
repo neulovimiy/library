@@ -6,155 +6,171 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Список книг</title>
   <link rel="stylesheet" href="/css/styles.css">
-  <script>
-    // Функция для сортировки таблицы
-    function sortTable(n, type) {
-      var table, rows, switching, i, x, y, shouldSwitch, dir, switchCount = 0;
-      table = document.getElementById("booksTable");
-      switching = true;
-      dir = "asc"; // Устанавливаем направление сортировки по умолчанию
-
-      while (switching) {
-        switching = false;
-        rows = table.rows;
-
-        // Проходим по всем строкам таблицы, кроме первой (заголовки)
-        for (i = 1; i < (rows.length - 1); i++) {
-          shouldSwitch = false;
-
-          // Получаем два элемента для сравнения
-          x = rows[i].getElementsByTagName("TD")[n];
-          y = rows[i + 1].getElementsByTagName("TD")[n];
-
-          // Проверяем направление сортировки
-          if (dir == "asc") {
-            if (type === 'number') {
-              if (parseInt(x.innerHTML) > parseInt(y.innerHTML)) {
-                shouldSwitch = true;
-                break;
-              }
-            } else {
-              if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                shouldSwitch = true;
-                break;
-              }
-            }
-          } else if (dir == "desc") {
-            if (type === 'number') {
-              if (parseInt(x.innerHTML) < parseInt(y.innerHTML)) {
-                shouldSwitch = true;
-                break;
-              }
-            } else {
-              if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                shouldSwitch = true;
-                break;
-              }
-            }
-          }
-        }
-
-        // Если было найдено, что нужно переключать строки, делаем это
-        if (shouldSwitch) {
-          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-          switching = true;
-          switchCount++;
-        } else {
-          // Если не было переключений, меняем направление сортировки
-          if (switchCount == 0 && dir == "asc") {
-            dir = "desc";
-            switching = true;
-          }
-        }
-      }
-    }
-
-    // Функция для фильтрации таблицы по значению в поисковой строке
-    function filterTable() {
-      var input, filter, table, tr, td, i, j, txtValue;
-      input = document.getElementById("searchInput");
-      filter = input.value.toLowerCase();
-      table = document.getElementById("booksTable");
-      tr = table.getElementsByTagName("tr");
-
-      // Проходим по всем строкам таблицы (кроме заголовков)
-      for (i = 1; i < tr.length; i++) {
-        tr[i].style.display = "none"; // Скрываем все строки по умолчанию
-
-        // Проверяем все столбцы (кроме последнего столбца с кнопками)
-        for (j = 0; j < tr[i].cells.length - 1; j++) {
-          td = tr[i].getElementsByTagName("td")[j];
-          if (td) {
-            txtValue = td.textContent || td.innerText;
-            if (txtValue.toLowerCase().indexOf(filter) > -1) {
-              tr[i].style.display = ""; // Показываем строку, если найдена совпадающая ячейка
-              break;
-            }
-          }
-        }
-      }
-    }
-  </script>
-</head>
-<body>
-  <div class="container">
-    <h1 class="text-center">Список доступных книг</h1>
-
-    <!-- Поисковая строка -->
-    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Поиск по названию, автору, жанру или году" class="form-control">
-
-    <!-- Таблица книг с возможностью сортировки -->
-    <table id="booksTable" class="table">
-      <thead>
-        <tr>
-          <% if (user && user.role === 'admin') { %>
-            <th onclick="sortTable(0, 'number')">ID</th>
-          <% } %>
-          <th onclick="sortTable(<%= user && user.role === 'admin' ? 1 : 0 %>, 'text')">Название</th>
-          <th onclick="sortTable(<%= user && user.role === 'admin' ? 2 : 1 %>, 'text')">Автор</th>
-          <th onclick="sortTable(<%= user && user.role === 'admin' ? 3 : 2 %>, 'text')">Жанр</th>
-          <th onclick="sortTable(<%= user && user.role === 'admin' ? 4 : 3 %>, 'number')">Год публикации</th>
-          <th onclick="sortTable(<%= user && user.role === 'admin' ? 5 : 4 %>, 'text')">Статус</th>
-          <th>Возможности</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% books.forEach(function(book) { %>
+  <body>
+    <div class="container">
+      <h1 class="text-center">Список доступных книг</h1>
+  
+      <!-- Поисковая строка -->
+      <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Поиск по названию, автору, жанру или году" class="form-control">
+  
+      <!-- Чекбокс для фильтрации только доступных книг -->
+      <label>
+        <input type="checkbox" id="availableOnly" onchange="filterTable()"> Показать только доступные книги
+      </label>
+  
+      <!-- Таблица книг с возможностью сортировки -->
+      <table id="booksTable" class="table">
+        <thead>
           <tr>
             <% if (user && user.role === 'admin') { %>
-              <td><%= book.book_id %></td>
+              <th onclick="sortTable(0, 'number')">ID</th>
             <% } %>
-            <td><%= book.title %></td>
-            <td><%= book.author %></td>
-            <td><%= book.genre %></td>
-            <td><%= book.published_year %></td>
-            <td><%= book.availability_status %></td>
-            <td>
-              <% if (!book.loan_id) { %>
-                <% if (book.availability_status === 'available' && book.available_count > 0) { %>
-                  <form action="/books/take/<%= book.book_id %>" method="POST">
-                    <button type="submit" class="btn">Взять</button>
+            <th onclick="sortTable(<%= user && user.role === 'admin' ? 1 : 0 %>, 'text')">Название</th>
+            <th onclick="sortTable(<%= user && user.role === 'admin' ? 2 : 1 %>, 'text')">Автор</th>
+            <th onclick="sortTable(<%= user && user.role === 'admin' ? 3 : 2 %>, 'text')">Жанр</th>
+            <th onclick="sortTable(<%= user && user.role === 'admin' ? 4 : 3 %>, 'number')">Год публикации</th>
+            <th onclick="sortTable(<%= user && user.role === 'admin' ? 5 : 4 %>, 'text')">Статус</th>
+            <th>Возможности</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% books.forEach(function(book) { %>
+            <tr>
+              <% if (user && user.role === 'admin') { %>
+                <td><%= book.book_id %></td>
+              <% } %>
+              <td><%= book.title %></td>
+              <td><%= book.author %></td>
+              <td><%= book.genre %></td>
+              <td><%= book.published_year %></td>
+              <td><%= book.availability_status %></td>
+              <td>
+                <% if (!book.loan_id) { %>
+                  <% if (book.availability_status === 'available' && book.available_count > 0) { %>
+                    <form action="/books/take/<%= book.book_id %>" method="POST">
+                      <button type="submit" class="btn">Взять</button>
+                    </form>
+                  <% } %>
+                <% } else { %>
+                  <form action="/books/return/<%= book.book_id %>" method="POST">
+                    <button type="submit" class="btn">Вернуть</button>
                   </form>
                 <% } %>
-              <% } else { %>
-                <form action="/books/return/<%= book.book_id %>" method="POST">
-                  <button type="submit" class="btn">Вернуть</button>
-                </form>
-              <% } %>
-            </td>
-          </tr>
-        <% }); %>
-      </tbody>
-    </table>
-
-    <!-- Кнопки администратора и "Выйти" -->
-    <div class="admin-buttons">
-      <% if (user && user.role === 'admin') { %>
-        <a href="/loans" class="btn btn-info">История</a>
-        <a href="/users" class="btn btn-primary">Пользователи</a>
-      <% } %>
-      <a href="/" class="btn btn-success">Выйти</a>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+  
+      <!-- Кнопки администратора и "Выйти" -->
+      <div class="admin-buttons">
+        <% if (user && user.role === 'admin') { %>
+          <a href="/loans" class="btn btn-info">История</a>
+          <a href="/users" class="btn btn-primary">Пользователи</a>
+        <% } %>
+        <a href="/" class="btn btn-success">Выйти</a>
+      </div>
     </div>
-  </div>
-</body>
+  
+    <script>
+      // Функция для сортировки таблицы
+      function sortTable(n, type) {
+        var table, rows, switching, i, x, y, shouldSwitch, dir, switchCount = 0;
+        table = document.getElementById("booksTable");
+        switching = true;
+        dir = "asc"; // Устанавливаем направление сортировки по умолчанию
+  
+        while (switching) {
+          switching = false;
+          rows = table.rows;
+  
+          // Проходим по всем строкам таблицы, кроме первой (заголовки)
+          for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+  
+            // Получаем два элемента для сравнения
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+  
+            // Проверяем направление сортировки
+            if (dir == "asc") {
+              if (type === 'number') {
+                if (parseInt(x.innerHTML) > parseInt(y.innerHTML)) {
+                  shouldSwitch = true;
+                  break;
+                }
+              } else {
+                if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                  shouldSwitch = true;
+                  break;
+                }
+              }
+            } else if (dir == "desc") {
+              if (type === 'number') {
+                if (parseInt(x.innerHTML) < parseInt(y.innerHTML)) {
+                  shouldSwitch = true;
+                  break;
+                }
+              } else {
+                if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                  shouldSwitch = true;
+                  break;
+                }
+              }
+            }
+          }
+  
+          // Если было найдено, что нужно переключать строки, делаем это
+          if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchCount++;
+          } else {
+            // Если не было переключений, меняем направление сортировки
+            if (switchCount == 0 && dir == "asc") {
+              dir = "desc";
+              switching = true;
+            }
+          }
+        }
+      }
+  
+      // Функция для фильтрации таблицы по значению в поисковой строке
+      function filterTable() {
+        var input, filter, table, tr, td, i, j, txtValue, availableOnly, status;
+        input = document.getElementById("searchInput");
+        filter = input.value.toLowerCase();
+        table = document.getElementById("booksTable");
+        tr = table.getElementsByTagName("tr");
+        availableOnly = document.getElementById("availableOnly").checked;
+  
+        // Проходим по всем строкам таблицы (кроме заголовков)
+        for (i = 1; i < tr.length; i++) {
+          tr[i].style.display = "none"; // Скрываем все строки по умолчанию
+          var matchFound = false;
+  
+          // Проверяем все столбцы (кроме последнего столбца с кнопками)
+          for (j = 0; j < tr[i].cells.length - 1; j++) {
+            td = tr[i].getElementsByTagName("td")[j];
+            if (td) {
+              txtValue = td.textContent || td.innerText;
+              if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                matchFound = true;
+              }
+            }
+          }
+  
+          // Проверка статуса доступности книги
+          status = tr[i].getElementsByTagName("td")[5].textContent || tr[i].getElementsByTagName("td")[5].innerText;
+          if (availableOnly && status !== 'available') {
+            matchFound = false;
+          }
+  
+          if (matchFound) {
+            tr[i].style.display = ""; // Показываем строку, если найдена совпадающая ячейка
+          }
+        }
+      }
+    </script>
+  </body>  
 </html>

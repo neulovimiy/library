@@ -156,15 +156,6 @@ table .btn:hover {
   gap: 10px;
 }
 
-.filter-label {
-  display: inline-block;
-  margin: 10px 0;
-  font-size: 16px;
-}
 
-#availableFilter {
-  margin-right: 8px;
-  cursor: pointer;
-}
 
   
