@@ -68,29 +68,62 @@
         }
       }
     }
+
+    // Функция для фильтрации таблицы по значению в поисковой строке
+    function filterTable() {
+      var input, filter, table, tr, td, i, j, txtValue;
+      input = document.getElementById("searchInput");
+      filter = input.value.toLowerCase();
+      table = document.getElementById("booksTable");
+      tr = table.getElementsByTagName("tr");
+
+      // Проходим по всем строкам таблицы (кроме заголовков)
+      for (i = 1; i < tr.length; i++) {
+        tr[i].style.display = "none"; // Скрываем все строки по умолчанию
+
+        // Проверяем все столбцы (кроме последнего столбца с кнопками)
+        for (j = 0; j < tr[i].cells.length - 1; j++) {
+          td = tr[i].getElementsByTagName("td")[j];
+          if (td) {
+            txtValue = td.textContent || td.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+              tr[i].style.display = ""; // Показываем строку, если найдена совпадающая ячейка
+              break;
+            }
+          }
+        }
+      }
+    }
   </script>
 </head>
 <body>
   <div class="container">
     <h1 class="text-center">Список доступных книг</h1>
 
+    <!-- Поисковая строка -->
+    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Поиск по названию, автору, жанру или году" class="form-control">
+
     <!-- Таблица книг с возможностью сортировки -->
     <table id="booksTable" class="table">
       <thead>
         <tr>
-          <th onclick="sortTable(0, 'number')">ID</th>
-          <th onclick="sortTable(1, 'text')">Название</th>
-          <th onclick="sortTable(2, 'text')">Автор</th>
-          <th onclick="sortTable(3, 'text')">Жанр</th>
-          <th onclick="sortTable(4, 'number')">Год публикации</th>
-          <th onclick="sortTable(5, 'text')">Статус</th>
+          <% if (user && user.role === 'admin') { %>
+            <th onclick="sortTable(0, 'number')">ID</th>
+          <% } %>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 1 : 0 %>, 'text')">Название</th>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 2 : 1 %>, 'text')">Автор</th>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 3 : 2 %>, 'text')">Жанр</th>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 4 : 3 %>, 'number')">Год публикации</th>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 5 : 4 %>, 'text')">Статус</th>
           <th>Возможности</th>
         </tr>
       </thead>
       <tbody>
         <% books.forEach(function(book) { %>
           <tr>
-            <td><%= book.book_id %></td>
+            <% if (user && user.role === 'admin') { %>
+              <td><%= book.book_id %></td>
+            <% } %>
             <td><%= book.title %></td>
             <td><%= book.author %></td>
             <td><%= book.genre %></td>
