@@ -232,9 +232,10 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
 
 app.get('/books', authenticateToken, (req, res) => {
   const userId = req.user.userId;
-  const filterAvailable = req.query.filterAvailable === 'true'; // Проверяем наличие фильтра "только доступные книги"
+  const filterAvailable = req.query.filterAvailable === 'true';
+  const filterBorrowed = req.query.filterBorrowed === 'true';
 
-  // Запрос на получение всех книг с информацией из таблицы bookdetails
+  // Базовый запрос для получения книг с информацией о деталях и статусе займа
   let query = `
     SELECT 
       Books.*, 
@@ -250,18 +251,31 @@ app.get('/books', authenticateToken, (req, res) => {
       bookdetails ON Books.book_id = bookdetails.book_id
   `;
 
-  // Если включен фильтр, добавляем условие для выбора только доступных книг
+  const queryParams = [userId];
+
+  // Если включен фильтр для доступных книг, добавляем условие
   if (filterAvailable) {
     query += " WHERE Books.availability_status = 'available'";
   }
 
-  connection.query(query, [userId], (err, results) => {
+  // Если включен фильтр для взятых книг, добавляем условие для показа только тех книг, которые пользователь взял
+  if (filterBorrowed) {
+    if (filterAvailable) {
+      query += " AND Loans.loan_id IS NOT NULL";
+    } else {
+      query += " WHERE Loans.loan_id IS NOT NULL";
+    }
+  }
+
+  // Выполняем запрос с параметрами
+  connection.query(query, queryParams, (err, results) => {
     if (err) throw err;
 
-    // Рендерим страницу с результатами, передавая также пользователя и фильтр
-    res.render('books', { books: results, user: req.user, filterAvailable });
+    // Рендерим страницу с книгами и передаем значения фильтров
+    res.render('books', { books: results, user: req.user, filterAvailable, filterBorrowed });
   });
 });
+
 
 
 app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {

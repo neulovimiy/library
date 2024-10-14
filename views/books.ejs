@@ -30,8 +30,19 @@
         />
         Показать только доступные книги
       </label>
+      <label>
+        <input 
+          type="checkbox" 
+          id="borrowedOnly" 
+          name="filterBorrowed" 
+          value="true" 
+          <% if (filterBorrowed) { %>checked<% } %> 
+        />
+        Показать только взятые мной книги
+      </label>
       <button type="submit" class="btn btn-primary">Применить фильтр</button>
     </form>
+    
     
     <!-- Таблица книг с возможностью сортировки -->
     <table id="booksTable" class="table">

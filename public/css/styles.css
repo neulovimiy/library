@@ -190,6 +190,20 @@ table .btn:hover {
   text-decoration: none;
   cursor: pointer;
 }
+.filter-container {
+  display: flex;
+  flex-direction: column; /* Размещаем элементы в колонку */
+  gap: 10px; /* Добавляем промежуток между элементами */
+  align-items: flex-start; /* Выровнять элементы по началу контейнера */
+}
+
+button[type="submit"] {
+  margin-top: 10px; /* Добавляем отступ сверху для кнопки */
+}
+
+input[type="checkbox"] {
+  margin-right: 5px; /* Добавляем отступ для чекбоксов */
+}
 
 
   
