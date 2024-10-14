@@ -1,43 +1,73 @@
-<!-- views/loans.ejs -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Список выданных книг</title>
-  <link rel="stylesheet" href="/css/styles.css"> <!-- Подключаем стили -->
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    /* Ограничиваем высоту таблицы и добавляем скролл */
+    .table-wrapper {
+      max-height: 400px; /* Максимальная высота обертки */
+      overflow-y: auto;  /* Включаем вертикальную прокрутку */
+      border: 1px solid #ddd; /* Граница вокруг обертки */
+      margin-bottom: 20px; /* Отступ снизу */
+    }
+    .table {
+      width: 100%; /* Ширина таблицы */
+      border-collapse: collapse; /* Убираем двойные границы */
+    }
+    .table th, .table td {
+      padding: 8px 12px; /* Отступы в ячейках */
+      border: 1px solid #ddd; /* Граница ячеек */
+      text-align: left; /* Выравнивание текста в ячейках */
+    }
+    .table thead th {
+      background-color: #f2f2f2; /* Цвет фона заголовков */
+      position: sticky; /* Делаем заголовки "липкими" */
+      top: 0; /* Положение сверху */
+      z-index: 2; /* Обеспечиваем видимость заголовков над контентом */
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <h1 class="text-center">Список выданных книг</h1>
     
-    <!-- Таблица займов -->
-    <table class="table">
-      <thead>
-        <tr>
-          <th>ID займа</th>
-          <th>Название книги</th>
-          <th>Имя пользователя</th>
-          <th>Дата выдачи</th>
-          <th>Дата возврата</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% loans.forEach(function(loan) { %>
+    <!-- Обертка для таблицы с прокруткой -->
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
           <tr>
-            <td><%= loan.loan_id %></td>
-            <td><%= loan.book_title %></td>
-            <td><%= loan.user_name %></td>
-            <td><%= loan.issue_date %></td>
-            <td><%= loan.return_date %></td>
+            <th>ID займа</th>
+            <th>Название книги</th>
+            <th>Имя пользователя</th>
+            <th>Дата выдачи</th>
+            <th>Дата возврата</th>
           </tr>
-        <% }); %>
-      </tbody>
-    </table>
-
+        </thead>
+        <tbody>
+          <% loans.forEach(function(loan) { %>
+            <tr>
+              <td><%= loan.loan_id %></td>
+              <td><%= loan.book_title %></td>
+              <td><%= loan.user_name %></td>
+              <td><%= loan.issue_date %></td>
+              <td><%= loan.return_date %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    
     <br />
     <a href="/books" class="btn btn-secondary">Назад</a> <!-- Кнопка "Назад" -->
     <a href="/" class="btn">Выйти</a>
   </div>
+
+  <script>
+    const loans = <%- JSON.stringify(loans) %>; // Преобразуем массив loans в JSON
+  </script>
+  <script src="/js/books.js"></script>
 </body>
 </html>

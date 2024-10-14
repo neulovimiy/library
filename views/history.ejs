@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Моя история</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    /* Ограничиваем высоту таблицы и добавляем скролл */
+    .table-wrapper {
+      max-height: 400px; /* Можно настроить под нужный размер */
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      margin-bottom: 20px;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .table th, .table td {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    .table thead th {
+      background-color: #f2f2f2;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center">Моя история получений</h1>
+    
+    <!-- Обертка для таблицы с прокруткой -->
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th>Автор</th>
+            <th>Жанр</th>
+            <th>Год публикации</th>
+            <th>Дата выдачи</th>
+            <th>Дата возврата</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% loans.forEach(function(loan) { %>
+            <tr>
+              <td><%= loan.title %></td>
+              <td><%= loan.author %></td>
+              <td><%= loan.genre %></td>
+              <td><%= loan.published_year %></td>
+              <td><%= loan.issue_date %></td>
+              <td><%= loan.return_date ? new Date(loan.return_date).toLocaleString() : 'Ещё не возвращена' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Кнопка назад -->
+    <a href="/books" class="btn btn-primary">Назад к книгам</a>
+  </div>
+
+  <script>
+    const loans = <%- JSON.stringify(loans) %>; // Преобразуем массив loans в JSON
+  </script>
+  <script src="/js/books.js"></script>
+</body>
+</html>

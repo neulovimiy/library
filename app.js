@@ -146,43 +146,85 @@ app.post('/login', (req, res) => {
     });
   });
 });
-
 // Маршрут для взятия книги
 app.post('/books/take/:id', authenticateToken, (req, res) => {
   const bookId = req.params.id;
   const userId = req.user.userId;  // Получаем ID пользователя из токена
 
   // Проверка доступности книги
-  const query = 'SELECT available_count FROM Books WHERE book_id = ?';
-  connection.query(query, [bookId], (err, results) => {
-    if (err) throw err;
+  const checkBookQuery = `
+    SELECT available_count 
+    FROM Books 
+    WHERE book_id = ? 
+    FOR UPDATE
+  `;
+  
+  connection.beginTransaction((err) => {
+    if (err) throw err; // Начинаем транзакцию
 
-    if (results.length > 0 && results[0].available_count > 0) {
-      const availableCount = results[0].available_count - 1;
-
-      // Обновляем количество доступных книг и статус
-      const updateQuery = `
-        UPDATE Books
-        SET available_count = ?, availability_status = ?
-        WHERE book_id = ?
-      `;
-      const newStatus = availableCount > 0 ? 'available' : 'unavailable';
-      connection.query(updateQuery, [availableCount, newStatus, bookId], (err) => {
-        if (err) throw err;
-
-        // Вставляем новую запись в таблицу Loans
-        const loanQuery = `
-          INSERT INTO Loans (book_id, user_id, issue_date) 
-          VALUES (?, ?, NOW())
-        `;
-        connection.query(loanQuery, [bookId, userId], (err) => {
-          if (err) throw err;
-          res.redirect('/books');  // Перенаправляем обратно на страницу книг
+    // Сначала проверим доступность книги
+    connection.query(checkBookQuery, [bookId], (err, results) => {
+      if (err) {
+        return connection.rollback(() => {
+          console.error('Ошибка при проверке книги:', err);
+          res.status(500).send('Ошибка сервера');
         });
-      });
-    } else {
-      res.status(400).send('Книга больше недоступна');
-    }
+      }
+
+      if (results.length > 0 && results[0].available_count > 0) {
+        const availableCount = results[0].available_count - 1;
+
+        // Обновляем количество доступных книг
+        const updateBookQuery = `
+          UPDATE Books
+          SET available_count = ?, availability_status = ?
+          WHERE book_id = ?
+        `;
+        const newStatus = availableCount > 0 ? 'available' : 'unavailable';
+
+        connection.query(updateBookQuery, [availableCount, newStatus, bookId], (err) => {
+          if (err) {
+            return connection.rollback(() => {
+              console.error('Ошибка при обновлении книги:', err);
+              res.status(500).send('Ошибка сервера');
+            });
+          }
+
+          // Вставляем новую запись в таблицу Loans
+          const insertLoanQuery = `
+            INSERT INTO loans (book_id, user_id, issue_date) 
+            VALUES (?, ?, NOW())
+          `;
+          
+          connection.query(insertLoanQuery, [bookId, userId], (err, results) => {
+            if (err) {
+              return connection.rollback(() => {
+                console.error('Ошибка при вставке записи в loans:', err);
+                res.status(500).send('Ошибка сервера');
+              });
+            }
+
+            // Фиксируем изменения (commit)
+            connection.commit((err) => {
+              if (err) {
+                return connection.rollback(() => {
+                  console.error('Ошибка при коммите транзакции:', err);
+                  res.status(500).send('Ошибка сервера');
+                });
+              }
+
+              // Если все прошло успешно, перенаправляем обратно на страницу книг
+              console.log('Запись добавлена в Loans:', results);
+              res.redirect('/books');
+            });
+          });
+        });
+      } else {
+        connection.rollback(() => {
+          res.status(400).send('Книга больше недоступна');
+        });
+      }
+    });
   });
 });
 
@@ -193,7 +235,7 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
 
   // Проверяем, брал ли пользователь эту книгу и не вернул ли её уже
   const query = `
-    SELECT * FROM Loans
+    SELECT * FROM loans
     WHERE book_id = ? AND user_id = ? AND return_date IS NULL
   `;
   connection.query(query, [bookId, userId], (err, results) => {
@@ -276,6 +318,36 @@ app.get('/books', authenticateToken, (req, res) => {
   });
 });
 
+app.get('/my-history', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+
+  // Запрос для получения всех записей из таблицы loans для текущего пользователя
+  const query = `
+    SELECT 
+      loans.*, 
+      Books.title, 
+      Books.author, 
+      Books.genre, 
+      Books.published_year, 
+      bookdetails.summary, 
+      bookdetails.page_count 
+    FROM 
+      Loans 
+    JOIN 
+      Books ON Loans.book_id = Books.book_id 
+    LEFT JOIN 
+      bookdetails ON Books.book_id = bookdetails.book_id
+    WHERE 
+      Loans.user_id = ?
+  `;
+
+  connection.query(query, [userId], (err, results) => {
+    if (err) throw err;
+
+    // Рендерим шаблон с историей пользователя
+    res.render('history', { loans: results, user: req.user });
+  });
+});
 
 
 app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {
@@ -294,28 +366,51 @@ app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {
 
 
 app.get('/loans', authenticateToken, authorizeAdmin, (req, res) => {
-  const query = `
-    SELECT 
-      Loans.loan_id, 
-      Books.title AS book_title, 
-      Users.name AS user_name, 
-      Loans.issue_date, 
-      Loans.return_date 
-    FROM Loans
-    JOIN Books ON Loans.book_id = Books.book_id
-    JOIN Users ON Loans.user_id = Users.user_id
-  `;
-  connection.query(query, (err, results) => {
+  const page = parseInt(req.query.page) || 1;  // Получаем номер текущей страницы
+  const limit = 25;  // Количество операций на странице
+  const offset = (page - 1) * limit; // Вычисляем смещение
+
+  // Запрос для получения общего количества записей
+  const countQuery = 'SELECT COUNT(*) AS total FROM Loans';
+  connection.query(countQuery, (err, countResult) => {
     if (err) throw err;
 
-    // Форматируем даты перед отправкой
-    results.forEach(loan => {
-      loan.issue_date = new Date(loan.issue_date).toLocaleString();
-      loan.return_date = loan.return_date ? new Date(loan.return_date).toLocaleString() : 'Не возвращена';
-    });
+    const totalLoans = countResult[0].total;  // Общее количество операций
+    const totalPages = Math.ceil(totalLoans / limit);  // Общее количество страниц
 
-    // Отправляем данные на страницу
-    res.render('loans', { loans: results });
+    
+    // Запрос для получения данных с учетом лимита и смещения
+    const loansQuery = `
+      SELECT 
+        Loans.loan_id, 
+        Books.title AS book_title, 
+        Users.name AS user_name, 
+        Loans.issue_date, 
+        Loans.return_date 
+      FROM Loans
+      JOIN Books ON Loans.book_id = Books.book_id
+      JOIN Users ON Loans.user_id = Users.user_id
+      ORDER BY Loans.loan_id ASC  -- Сортировка по loan_id
+      LIMIT ? OFFSET ?`;
+
+    connection.query(loansQuery, [limit, offset], (err, results) => {
+      if (err) throw err;
+
+      
+
+      // Форматируем даты перед отправкой
+      results.forEach(loan => {
+        loan.issue_date = new Date(loan.issue_date).toLocaleString();
+        loan.return_date = loan.return_date ? new Date(loan.return_date).toLocaleString() : 'Не возвращена';
+      });
+
+      // Отправляем данные на страницу
+      res.render('loans', {
+        loans: results,
+        currentPage: page,
+        totalPages: totalPages
+      });
+    });
   });
 });
 
