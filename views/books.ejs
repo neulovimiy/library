@@ -9,14 +9,18 @@
   <body>
     <div class="container">
       <h1 class="text-center">Список доступных книг</h1>
-  
+      
       <!-- Поисковая строка -->
       <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Поиск по названию, автору, жанру или году" class="form-control">
-  
-      <!-- Чекбокс для фильтрации только доступных книг -->
+      <!-- Форма для фильтрации доступных книг -->
+    <form method="GET" action="/books">
       <label>
-        <input type="checkbox" id="availableOnly" onchange="filterTable()"> Показать только доступные книги
+        <input type="checkbox" name="filterAvailable" value="true" <% if (filterAvailable) { %>checked<% } %> />
+        Показать только доступные книги
       </label>
+      <button type="submit">Применить фильтр</button>
+    </form>
+    
   
       <!-- Таблица книг с возможностью сортировки -->
       <table id="booksTable" class="table">

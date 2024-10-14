@@ -60,7 +60,6 @@
     }
   }
 
-  // Функция для фильтрации таблицы по значению в поисковой строке
   function filterTable() {
     var input, filter, table, tr, td, i, j, txtValue, availableOnly, status;
     input = document.getElementById("searchInput");
@@ -69,31 +68,31 @@
     tr = table.getElementsByTagName("tr");
     availableOnly = document.getElementById("availableOnly").checked;
 
-    // Проходим по всем строкам таблицы (кроме заголовков)
     for (i = 1; i < tr.length; i++) {
-      tr[i].style.display = "none"; // Скрываем все строки по умолчанию
-      var matchFound = false;
+        tr[i].style.display = "none"; // Скрываем все строки по умолчанию
+        var matchFound = false;
 
-      // Проверяем все столбцы (кроме последнего столбца с кнопками)
-      for (j = 0; j < tr[i].cells.length - 1; j++) {
-        td = tr[i].getElementsByTagName("td")[j];
-        if (td) {
-          txtValue = td.textContent || td.innerText;
-          if (txtValue.toLowerCase().indexOf(filter) > -1) {
-            matchFound = true;
-          }
+        // Проверяем все столбцы (кроме последнего столбца с кнопками)
+        for (j = 0; j < tr[i].cells.length - 1; j++) {
+            td = tr[i].getElementsByTagName("td")[j];
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                    matchFound = true;
+                }
+            }
         }
-      }
 
-      // Проверка статуса доступности книги
-      status = tr[i].getElementsByTagName("td")[5].textContent || tr[i].getElementsByTagName("td")[5].innerText;
-      if (availableOnly && status !== 'available') {
-        matchFound = false;
-      }
+        // Проверка статуса доступности книги для обычных пользователей
+        status = tr[i].getElementsByTagName("td")[5].textContent || tr[i].getElementsByTagName("td")[5].innerText;
+        if (availableOnly && status !== 'available') {
+            matchFound = false;
+        }
 
-      if (matchFound) {
-        tr[i].style.display = ""; // Показываем строку, если найдена совпадающая ячейка
-      }
+        if (matchFound) {
+            tr[i].style.display = ""; // Показываем строку, если найдена совпадающая ячейка
+        }
     }
-  }
+}
+
   
