@@ -6,76 +6,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Список книг</title>
   <link rel="stylesheet" href="/css/styles.css">
-  <body>
-    <div class="container">
-      <h1 class="text-center">Список доступных книг</h1>
-      
-      <!-- Поисковая строка -->
-      <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Поиск по названию, автору, жанру или году" class="form-control">
-      <!-- Форма для фильтрации доступных книг -->
-    <form method="GET" action="/books">
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center">Список доступных книг</h1>
+    
+    <!-- Поисковая строка -->
+    <input 
+      type="text" 
+      id="searchInput" 
+      onkeyup="filterTable()" 
+      placeholder="Поиск по названию, автору, жанру или году" 
+      class="form-control"
+    >
+    <form method="GET" action="/books" class="mb-3">
       <label>
-        <input type="checkbox" name="filterAvailable" value="true" <% if (filterAvailable) { %>checked<% } %> />
+        <input 
+          type="checkbox" 
+          id="availableOnly" 
+          name="filterAvailable" 
+          value="true" 
+          <% if (filterAvailable) { %>checked<% } %> 
+        />
         Показать только доступные книги
       </label>
-      <button type="submit">Применить фильтр</button>
+      <button type="submit" class="btn btn-primary">Применить фильтр</button>
     </form>
     
-  
-      <!-- Таблица книг с возможностью сортировки -->
-      <table id="booksTable" class="table">
-        <thead>
+    
+
+    <!-- Таблица книг с возможностью сортировки -->
+    <table id="booksTable" class="table">
+      <thead>
+        <tr>
+          <% if (user && user.role === 'admin') { %>
+            <th onclick="sortTable(0, 'number')">ID</th>
+          <% } %>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 1 : 0 %>, 'text')">Название</th>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 2 : 1 %>, 'text')">Автор</th>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 3 : 2 %>, 'text')">Жанр</th>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 4 : 3 %>, 'number')">Год публикации</th>
+          <th onclick="sortTable(<%= user && user.role === 'admin' ? 5 : 4 %>, 'text')">Статус</th>
+          <th>Возможности</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% books.forEach(function(book) { %>
           <tr>
             <% if (user && user.role === 'admin') { %>
-              <th onclick="sortTable(0, 'number')">ID</th>
+              <td><%= book.book_id %></td>
             <% } %>
-            <th onclick="sortTable(<%= user && user.role === 'admin' ? 1 : 0 %>, 'text')">Название</th>
-            <th onclick="sortTable(<%= user && user.role === 'admin' ? 2 : 1 %>, 'text')">Автор</th>
-            <th onclick="sortTable(<%= user && user.role === 'admin' ? 3 : 2 %>, 'text')">Жанр</th>
-            <th onclick="sortTable(<%= user && user.role === 'admin' ? 4 : 3 %>, 'number')">Год публикации</th>
-            <th onclick="sortTable(<%= user && user.role === 'admin' ? 5 : 4 %>, 'text')">Статус</th>
-            <th>Возможности</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% books.forEach(function(book) { %>
-            <tr>
-              <% if (user && user.role === 'admin') { %>
-                <td><%= book.book_id %></td>
+            <td><%= book.title %></td>
+            <td><%= book.author %></td>
+            <td><%= book.genre %></td>
+            <td><%= book.published_year %></td>
+            <td><%= book.availability_status %></td>
+            <td>
+              <% if (!book.loan_id && book.availability_status === 'available' && book.available_count > 0) { %>
+                <form action="/books/take/<%= book.book_id %>" method="POST" class="d-inline">
+                  <button type="submit" class="btn btn-success">Взять</button>
+                </form>
+              <% } else if (book.loan_id) { %>
+                <form action="/books/return/<%= book.book_id %>" method="POST" class="d-inline">
+                  <button type="submit" class="btn btn-warning">Вернуть</button>
+                </form>
+              <% } else { %>
+                <p>Книга недоступна</p>
               <% } %>
-              <td><%= book.title %></td>
-              <td><%= book.author %></td>
-              <td><%= book.genre %></td>
-              <td><%= book.published_year %></td>
-              <td><%= book.availability_status %></td>
-              <td>
-                <% if (!book.loan_id) { %>
-                  <% if (book.availability_status === 'available' && book.available_count > 0) { %>
-                    <form action="/books/take/<%= book.book_id %>" method="POST">
-                      <button type="submit" class="btn">Взять</button>
-                    </form>
-                  <% } %>
-                <% } else { %>
-                  <form action="/books/return/<%= book.book_id %>" method="POST">
-                    <button type="submit" class="btn">Вернуть</button>
-                  </form>
-                <% } %>
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
-  
-      <!-- Кнопки администратора и "Выйти" -->
-      <div class="admin-buttons">
-        <% if (user && user.role === 'admin') { %>
-          <a href="/loans" class="btn btn-info">История</a>
-          <a href="/users" class="btn btn-primary">Пользователи</a>
-        <% } %>
-        <a href="/" class="btn btn-success">Выйти</a>
-      </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+    <!-- Кнопки администратора и "Выйти" -->
+    <div class="admin-buttons">
+      <% if (user && user.role === 'admin') { %>
+        <a href="/loans" class="btn btn-info">История</a>
+        <a href="/users" class="btn btn-primary">Пользователи</a>
+      <% } %>
+      <a href="/" class="btn btn-success">Выйти</a>
     </div>
-  
-    <script src="/js/books.js"></script>
-  </body>  
+  </div>
+
+  <script src="/js/books.js"></script>
+</body>  
 </html>

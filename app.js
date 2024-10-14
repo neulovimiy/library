@@ -212,12 +212,14 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
         // Увеличиваем количество доступных книг и обновляем статус
         const updateBookQuery = `
           UPDATE Books
-          SET available_count = available_count + 1, 
+          SET available_count = available_count + 1,
               availability_status = IF(available_count + 1 > 0, 'available', 'unavailable')
           WHERE book_id = ?
         `;
         connection.query(updateBookQuery, [bookId], (err) => {
           if (err) throw err;
+
+          // Обновляем книги и возвращаем на страницу
           res.redirect('/books'); // Возвращаемся на страницу книг
         });
       });
@@ -226,6 +228,7 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
     }
   });
 });
+
 
 
 app.get('/books', authenticateToken, (req, res) => {

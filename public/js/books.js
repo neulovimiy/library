@@ -66,7 +66,10 @@
     filter = input.value.toLowerCase();
     table = document.getElementById("booksTable");
     tr = table.getElementsByTagName("tr");
-    availableOnly = document.getElementById("availableOnly").checked;
+    
+    // Проверка наличия элемента 'availableOnly' и его состояния
+    var availableOnlyCheckbox = document.getElementById("availableOnly");
+    availableOnly = availableOnlyCheckbox ? availableOnlyCheckbox.checked : false;
 
     for (i = 1; i < tr.length; i++) {
         tr[i].style.display = "none"; // Скрываем все строки по умолчанию
