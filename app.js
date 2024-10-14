@@ -230,16 +230,24 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
 });
 
 
-
 app.get('/books', authenticateToken, (req, res) => {
   const userId = req.user.userId;
   const filterAvailable = req.query.filterAvailable === 'true'; // Проверяем наличие фильтра "только доступные книги"
 
-  // Запрос на получение всех книг
+  // Запрос на получение всех книг с информацией из таблицы bookdetails
   let query = `
-    SELECT Books.*, Loans.loan_id, Loans.return_date 
-    FROM Books
-    LEFT JOIN Loans ON Books.book_id = Loans.book_id AND Loans.user_id = ? AND Loans.return_date IS NULL
+    SELECT 
+      Books.*, 
+      Loans.loan_id, 
+      Loans.return_date, 
+      bookdetails.summary, 
+      bookdetails.page_count
+    FROM 
+      Books
+    LEFT JOIN 
+      Loans ON Books.book_id = Loans.book_id AND Loans.user_id = ? AND Loans.return_date IS NULL
+    LEFT JOIN 
+      bookdetails ON Books.book_id = bookdetails.book_id
   `;
 
   // Если включен фильтр, добавляем условие для выбора только доступных книг
@@ -254,6 +262,7 @@ app.get('/books', authenticateToken, (req, res) => {
     res.render('books', { books: results, user: req.user, filterAvailable });
   });
 });
+
 
 app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {
   connection.query('SELECT * FROM users', (err, results) => {

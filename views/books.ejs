@@ -33,8 +33,6 @@
       <button type="submit" class="btn btn-primary">Применить фильтр</button>
     </form>
     
-    
-
     <!-- Таблица книг с возможностью сортировки -->
     <table id="booksTable" class="table">
       <thead>
@@ -47,6 +45,7 @@
           <th onclick="sortTable(<%= user && user.role === 'admin' ? 3 : 2 %>, 'text')">Жанр</th>
           <th onclick="sortTable(<%= user && user.role === 'admin' ? 4 : 3 %>, 'number')">Год публикации</th>
           <th onclick="sortTable(<%= user && user.role === 'admin' ? 5 : 4 %>, 'text')">Статус</th>
+          <th>Информация</th>
           <th>Возможности</th>
         </tr>
       </thead>
@@ -61,6 +60,9 @@
             <td><%= book.genre %></td>
             <td><%= book.published_year %></td>
             <td><%= book.availability_status %></td>
+            <td>
+              <button class="info-button" onclick="showInfo(<%= book.book_id %>)">ℹ️</button>
+            </td>
             <td>
               <% if (!book.loan_id && book.availability_status === 'available' && book.available_count > 0) { %>
                 <form action="/books/take/<%= book.book_id %>" method="POST" class="d-inline">
@@ -89,6 +91,20 @@
     </div>
   </div>
 
+  <!-- Всплывающее окно -->
+  <div id="infoModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2>Информация о книге</h2>
+      <p id="bookSummary"></p>
+      <p id="pageCount"></p>
+    </div>
+  </div>
+
+  <script>
+    const books = <%- JSON.stringify(books) %>; // Преобразуем массив books в JSON
+  </script>
   <script src="/js/books.js"></script>
+  
 </body>  
 </html>

@@ -98,4 +98,26 @@
     }
 }
 
-  
+function showInfo(bookId) {
+  // Ищем книгу по её ID в массиве books
+  const book = books.find(b => b.book_id === bookId);
+  console.log("Selected Book ID: ", bookId); // Для отладки
+  console.log("Book Data: ", book); // Для отладки
+
+  if (book) {
+    // Заполняем информацию в модальном окне
+    document.getElementById('bookSummary').innerText = `Краткое содержание: ${book.summary || 'Нет информации'}`;
+    document.getElementById('pageCount').innerText = `Количество страниц: ${book.page_count || 'Не указано'}`;
+
+    // Показываем модальное окно
+    document.getElementById('infoModal').style.display = "block";
+  } else {
+    alert("Информация о книге не найдена.");
+  }
+}
+
+
+// Функция для закрытия всплывающего окна
+function closeModal() {
+  document.getElementById('infoModal').style.display = "none";
+}
