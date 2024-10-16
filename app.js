@@ -146,6 +146,43 @@ app.post('/login', (req, res) => {
     });
   });
 });
+
+// Маршрут для отображения страницы добавления книги (доступно только администратору)
+app.get('/books/add', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).send('Доступ запрещен');
+  }
+  res.render('add-book'); // Создаем новый шаблон add-book.ejs
+});
+
+// Маршрут для обработки добавления новой книги
+app.post('/books/add', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).send('Доступ запрещен');
+  }
+
+  const { title, author, genre, published_year, available_count } = req.body;
+  // Проверяем, чтобы год не превышал 2024
+  if (parseInt(published_year, 10) > 2024) {
+    return res.status(400).send('Год публикации не может быть больше 2024');
+  }
+  const query = `
+    INSERT INTO Books (title, author, genre, published_year, availability_status, available_count)
+    VALUES (?, ?, ?, ?, 'available', ?)
+  `;
+
+  connection.query(query, [title, author, genre, published_year, available_count], (err) => {
+    if (err) {
+      console.error('Ошибка при добавлении книги:', err);
+      return res.status(500).send('Ошибка сервера');
+    }
+
+    // После успешного добавления перенаправляем обратно на страницу списка книг
+    res.redirect('/books');
+  });
+});
+
+
 // Маршрут для взятия книги
 app.post('/books/take/:id', authenticateToken, (req, res) => {
   const bookId = req.params.id;
@@ -212,10 +249,9 @@ app.post('/books/take/:id', authenticateToken, (req, res) => {
                   res.status(500).send('Ошибка сервера');
                 });
               }
-
-              // Если все прошло успешно, перенаправляем обратно на страницу книг
               console.log('Запись добавлена в Loans:', results);
               res.redirect('/books');
+             
             });
           });
         });
@@ -270,7 +306,6 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
     }
   });
 });
-
 
 app.get('/books', authenticateToken, (req, res) => {
   const userId = req.user.userId;

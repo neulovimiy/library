@@ -205,5 +205,28 @@ input[type="checkbox"] {
   margin-right: 5px; /* Добавляем отступ для чекбоксов */
 }
 
+.status-available {
+  color: green;
+  font-weight: bold; /* Жирный текст */
+}
+
+.status-unavailable {
+  color: red;
+  font-weight: bold; /* Жирный текст */
+}
+
+.btn-gray {
+  background-color: #808080; /* Серый цвет */
+  color: white; /* Белый текст */
+  text-decoration: none; /* Убираем подчеркивание у ссылок */
+  padding: 10px 20px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.btn-gray:hover {
+  background-color: #696969; /* Темно-серый цвет при наведении */
+}
+
 
   

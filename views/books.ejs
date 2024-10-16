@@ -70,10 +70,14 @@
             <td><%= book.author %></td>
             <td><%= book.genre %></td>
             <td><%= book.published_year %></td>
-            <td><%= book.availability_status %></td>
-            <td>
-              <button class="info-button" onclick="showInfo(<%= book.book_id %>)">ℹ️</button>
+            <td class="<%= book.availability_status === 'available' ? 'status-available' : 'status-unavailable' %>">
+              <%= book.availability_status %>
             </td>
+            
+            <td>
+              <button class="info-button" onclick="showInfo(<%= book.book_id %>)" style="background-color: rgba(66,170,255);">nfo</button>
+            </td>
+            
             <td>
               <% if (!book.loan_id && book.availability_status === 'available' && book.available_count > 0) { %>
                 <form action="/books/take/<%= book.book_id %>" method="POST" class="d-inline">
@@ -84,7 +88,7 @@
                   <button type="submit" class="btn btn-warning">Вернуть</button>
                 </form>
               <% } else { %>
-                <p>Книга недоступна</p>
+                <p>Нет возможностей</p>
               <% } %>
             </td>
           </tr>
@@ -92,17 +96,21 @@
       </tbody>
     </table>
 
-    <!-- Кнопки администратора и "Выйти" -->
-    <div class="admin-buttons">
-      <% if (user && user.role === 'admin') { %>
-        <a href="/loans" class="btn btn-info">История</a>
-        <a href="/users" class="btn btn-primary">Пользователи</a>
-      <% } %>
-      <!-- Кнопка "Моя история" для всех пользователей -->
-      <a href="/my-history" class="btn btn-secondary">Моя история</a>
+<!-- Кнопки администратора и "Выйти" -->
+<div class="admin-buttons">
+  <% if (user && user.role === 'admin') { %>
+    <a href="/loans" class="btn btn-gray">История</a>
+    <a href="/users" class="btn btn-gray">Пользователи</a>
+    <!-- Новая кнопка для добавления книги -->
+    <a href="/books/add" class="btn btn-gray">Добавить книгу</a>
+  <% } %>
+  <!-- Кнопка "Моя история" для всех пользователей -->
+  <a href="/my-history" class="btn btn-gray">Моя история</a>
 
-      <a href="/" class="btn btn-success">Выйти</a>
-    </div>
+  <a href="/" class="btn btn-gray">Выйти</a>
+</div>
+
+
   </div>
 
   <!-- Всплывающее окно -->

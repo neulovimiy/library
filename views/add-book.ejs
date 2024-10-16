@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Добавить книгу</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center">Добавить новую книгу</h1>
+    <form action="/books/add" method="POST">
+      <div class="form-group">
+        <label for="title">Название книги</label>
+        <input type="text" name="title" id="title" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label for="author">Автор</label>
+        <input type="text" name="author" id="author" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label for="genre">Жанр</label>
+        <input type="text" name="genre" id="genre" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label for="published_year">Год публикации</label>
+        <input type="number" name="published_year" id="published_year" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label for="available_count">Количество доступных экземпляров</label>
+        <input type="number" name="available_count" id="available_count" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success">Добавить книгу</button>
+    </form>
+  </div>
+</body>
+</html>

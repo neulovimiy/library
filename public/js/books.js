@@ -121,3 +121,4 @@ function showInfo(bookId) {
 function closeModal() {
   document.getElementById('infoModal').style.display = "none";
 }
+
