@@ -5,7 +5,7 @@ const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const path = require('path');  // Для работы с путями файлов
 const { authenticateToken, authorizeAdmin } = require('./middleware'); // Импортируем миддлвары для авторизации
-
+const logger = require('./logger'); // Подключаем логгер
 const app = express();
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
@@ -33,10 +33,10 @@ const connection = mysql.createConnection({
 // Проверка соединения с базой данных
 connection.connect((err) => {
   if (err) {
-    console.error('Ошибка подключения к базе данных: ' + err.stack);
+    logger.error('Ошибка подключения к базе данных: ' + err.stack);
     return;
   }
-  console.log('Подключение к базе данных успешно установлено');
+  logger.info('Подключение к базе данных успешно установлено');
 });
 
 // Используем маршруты для аутентификации
@@ -57,7 +57,7 @@ app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
   // Логируем данные, чтобы убедиться, что они приходят корректно
-  console.log('Регистрация данные: ', req.body); // Логируем входящие данные
+  logger.info('Регистрация данные: ', req.body); // Логируем входящие данные
 
   // Проверка на пустые значения
   if (!name || !email || !password) {
@@ -72,7 +72,7 @@ app.post('/register', async (req, res) => {
     const query = 'INSERT INTO users (name, email, role) VALUES (?, ?, ?)';
     connection.query(query, [name, email, 'user'], (err, result) => {
       if (err) {
-        console.error('Ошибка при добавлении пользователя в таблицу users: ', err);
+        logger.error('Ошибка при добавлении пользователя в таблицу users: ', err);
         return res.status(500).send('Ошибка при регистрации пользователя');
       }
 
@@ -82,16 +82,16 @@ app.post('/register', async (req, res) => {
       const credentialsQuery = 'INSERT INTO user_credentials (user_id, hashed_password) VALUES (?, ?)';
       connection.query(credentialsQuery, [userId, hashedPassword], (err, result) => {
         if (err) {
-          console.error('Ошибка при добавлении пароля в таблицу user_credentials: ', err);
+          logger.error('Ошибка при добавлении пароля в таблицу user_credentials: ', err);
           return res.status(500).send('Ошибка при сохранении пароля');
         }
 
-        console.log('Пользователь успешно зарегистрирован');
+        logger.info('Пользователь успешно зарегистрирован');
         res.redirect('/');  // После регистрации перенаправляем на страницу логина
       });
     });
   } catch (error) {
-    console.error('Ошибка при регистрации: ', error);
+    logger.error('Ошибка при регистрации: ', error);
     res.status(500).send('Ошибка при регистрации');
   }
 });
@@ -105,7 +105,7 @@ app.post('/login', (req, res) => {
   const query = 'SELECT user_id, role FROM users WHERE email = ?';
   connection.query(query, [email], async (err, results) => {
     if (err) {
-      console.error('Ошибка при поиске пользователя: ', err);
+      logger.error('Ошибка при поиске пользователя: ', err);
       return res.status(500).send('Ошибка при аутентификации');
     }
 
@@ -119,7 +119,7 @@ app.post('/login', (req, res) => {
     const credentialsQuery = 'SELECT hashed_password FROM user_credentials WHERE user_id = ?';
     connection.query(credentialsQuery, [userId], async (err, results) => {
       if (err) {
-        console.error('Ошибка при поиске пароля: ', err);
+        logger.error('Ошибка при поиске пароля: ', err);
         return res.status(500).send('Ошибка при аутентификации');
       }
 
@@ -173,7 +173,7 @@ app.post('/books/add', authenticateToken, (req, res) => {
 
   connection.query(query, [title, author, genre, published_year, available_count], (err) => {
     if (err) {
-      console.error('Ошибка при добавлении книги:', err);
+      logger.error('Ошибка при добавлении книги:', err);
       return res.status(500).send('Ошибка сервера');
     }
 
@@ -203,7 +203,7 @@ app.post('/books/take/:id', authenticateToken, (req, res) => {
     connection.query(checkBookQuery, [bookId], (err, results) => {
       if (err) {
         return connection.rollback(() => {
-          console.error('Ошибка при проверке книги:', err);
+          logger.error('Ошибка при проверке книги:', err);
           res.status(500).send('Ошибка сервера');
         });
       }
@@ -222,7 +222,7 @@ app.post('/books/take/:id', authenticateToken, (req, res) => {
         connection.query(updateBookQuery, [availableCount, newStatus, bookId], (err) => {
           if (err) {
             return connection.rollback(() => {
-              console.error('Ошибка при обновлении книги:', err);
+              logger.error('Ошибка при обновлении книги:', err);
               res.status(500).send('Ошибка сервера');
             });
           }
@@ -236,7 +236,7 @@ app.post('/books/take/:id', authenticateToken, (req, res) => {
           connection.query(insertLoanQuery, [bookId, userId], (err, results) => {
             if (err) {
               return connection.rollback(() => {
-                console.error('Ошибка при вставке записи в loans:', err);
+                logger.error('Ошибка при вставке записи в loans:', err);
                 res.status(500).send('Ошибка сервера');
               });
             }
@@ -245,11 +245,11 @@ app.post('/books/take/:id', authenticateToken, (req, res) => {
             connection.commit((err) => {
               if (err) {
                 return connection.rollback(() => {
-                  console.error('Ошибка при коммите транзакции:', err);
+                  logger.error('Ошибка при коммите транзакции:', err);
                   res.status(500).send('Ошибка сервера');
                 });
               }
-              console.log('Запись добавлена в Loans:', results);
+              logger.info('Запись добавлена в Loans:', results);
               res.redirect('/books');
              
             });
@@ -452,5 +452,5 @@ app.get('/loans', authenticateToken, authorizeAdmin, (req, res) => {
 
 // Запуск сервера на порту 3000
 app.listen(3000, () => {
-  console.log('Сервер запущен на http://localhost:3000');
+  logger.info('Сервер запущен на http://localhost:3000');
 });

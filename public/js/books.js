@@ -101,8 +101,8 @@
 function showInfo(bookId) {
   // Ищем книгу по её ID в массиве books
   const book = books.find(b => b.book_id === bookId);
-  console.log("Selected Book ID: ", bookId); // Для отладки
-  console.log("Book Data: ", book); // Для отладки
+  logger.info("Selected Book ID: ", bookId); // Для отладки
+  logger.info("Book Data: ", book); // Для отладки
 
   if (book) {
     // Заполняем информацию в модальном окне

@@ -8,7 +8,7 @@ module.exports = (app, connection) => {
   app.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
 
-    console.log('Данные для регистрации:', req.body);  // Логирование входящих данных
+    logger.info('Данные для регистрации:', req.body);  // Логирование входящих данных
 
     // Проверка на пустые значения
     if (!name || !email || !password) {
@@ -23,7 +23,7 @@ module.exports = (app, connection) => {
       const query = 'INSERT INTO users (name, email, role) VALUES (?, ?, ?)';
       connection.query(query, [name, email, 'user'], (err, result) => {
         if (err) {
-          console.error('Ошибка при добавлении пользователя в таблицу users:', err);
+          logger.error('Ошибка при добавлении пользователя в таблицу users:', err);
           return res.status(500).send('Ошибка при регистрации пользователя');
         }
 
@@ -33,16 +33,16 @@ module.exports = (app, connection) => {
         const credentialsQuery = 'INSERT INTO user_credentials (user_id, hashed_password) VALUES (?, ?)';
         connection.query(credentialsQuery, [userId, hashedPassword], (err, result) => {
           if (err) {
-            console.error('Ошибка при добавлении пароля в таблицу user_credentials:', err);
+            logger.error('Ошибка при добавлении пароля в таблицу user_credentials:', err);
             return res.status(500).send('Ошибка при сохранении пароля');
           }
 
-          console.log('Пользователь успешно зарегистрирован');
+          logger.info('Пользователь успешно зарегистрирован');
           res.redirect('/');  // После успешной регистрации перенаправляем на страницу логина
         });
       });
     } catch (error) {
-      console.error('Ошибка при регистрации:', error);
+      logger.error('Ошибка при регистрации:', error);
       res.status(500).send('Ошибка при регистрации');
     }
   });
@@ -59,7 +59,7 @@ module.exports = (app, connection) => {
     const query = 'SELECT user_id, role FROM users WHERE email = ?';
     connection.query(query, [email], async (err, results) => {
       if (err) {
-        console.error('Ошибка при поиске пользователя:', err);
+        logger.error('Ошибка при поиске пользователя:', err);
         return res.status(500).send('Ошибка при аутентификации');
       }
 
@@ -74,7 +74,7 @@ module.exports = (app, connection) => {
       const credentialsQuery = 'SELECT hashed_password FROM user_credentials WHERE user_id = ?';
       connection.query(credentialsQuery, [userId], async (err, results) => {
         if (err) {
-          console.error('Ошибка при поиске пароля:', err);
+          logger.error('Ошибка при поиске пароля:', err);
           return res.status(500).send('Ошибка при аутентификации');
         }
 
