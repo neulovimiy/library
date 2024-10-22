@@ -1,4 +1,3 @@
-<!-- views/register.ejs -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -6,26 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Регистрация</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <script>
+    function validatePasswords() {
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const errorMessage = document.getElementById('error-message');
+
+      if (password !== confirmPassword) {
+        errorMessage.textContent = "Пароли не совпадают!";
+        return false; // Останавливаем отправку формы
+      }
+      
+      errorMessage.textContent = ""; // Очищаем сообщение об ошибке, если пароли совпадают
+      return true; // Разрешаем отправку формы
+    }
+  </script>
 </head>
 <body>
   <div class="container">
-  <h1>Регистрация</h1>
-  <form action="/register" method="POST">
-    <div>
-      <label for="name">Имя:</label>
-      <input type="text" id="name" name="name" required />
-    </div>
-    <div>
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required />
-    </div>
-    <div>
-      <label for="password">Пароль:</label>
-      <input type="password" id="password" name="password" required />
-    </div>
-    <button type="submit">Зарегистрироваться</button>
-  </form>
-  <br />
-  <a href="/">Уже есть аккаунт? Войти</a>
+    <h1>Регистрация</h1>
+    <form action="/register" method="POST" onsubmit="return validatePasswords()">
+      <div>
+        <label for="name">Имя:</label>
+        <input type="text" id="name" name="name" required />
+      </div>
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required />
+      </div>
+      <div>
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password" required />
+      </div>
+      <div>
+        <label for="confirmPassword">Повторите пароль:</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" required />
+      </div>
+      
+      <!-- Выводим сообщение об ошибке, если пароли не совпадают -->
+      <div id="error-message" style="color: red;"></div>
+      
+      <button type="submit">Зарегистрироваться</button>
+    </form>
+    <br />
+    <a href="/">Уже есть аккаунт? Войти</a>
+  </div>
 </body>
 </html>

@@ -1,3 +1,4 @@
+
   // Функция для сортировки таблицы
   function sortTable(n, type) {
     var table, rows, switching, i, x, y, shouldSwitch, dir, switchCount = 0;
@@ -101,8 +102,8 @@
 function showInfo(bookId) {
   // Ищем книгу по её ID в массиве books
   const book = books.find(b => b.book_id === bookId);
-  logger.info("Selected Book ID: ", bookId); // Для отладки
-  logger.info("Book Data: ", book); // Для отладки
+  console.log("Selected Book ID: ", bookId); // Для отладки
+  console.log("Book Data: ", book); // Для отладки
 
   if (book) {
     // Заполняем информацию в модальном окне

@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const secretKey = process.env.SECRET_KEY;
-
+const logger = require('./logger'); 
 module.exports = (app, connection) => {
 
   // Регистрация пользователя
