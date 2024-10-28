@@ -4,7 +4,8 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const path = require('path');  // Для работы с путями файлов
-const { authenticateToken, authorizeAdmin } = require('./middleware'); // Импортируем миддлвары для авторизации
+const { authenticateToken, authorizeAdmin, authorizeLibrarianOrAdmin } = require('./middleware');
+
 const logger = require('./logger'); // Подключаем логгер
 const app = express();
 const cookieParser = require('cookie-parser');
@@ -306,50 +307,86 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
     }
   });
 });
-
 app.get('/books', authenticateToken, (req, res) => {
   const userId = req.user.userId;
   const filterAvailable = req.query.filterAvailable === 'true';
   const filterBorrowed = req.query.filterBorrowed === 'true';
+  const searchQuery = req.query.searchQuery;
+  const itemsPerPage = 5;
+  const currentPage = parseInt(req.query.page) || 1;
+  const offset = (currentPage - 1) * itemsPerPage;
 
-  // Базовый запрос для получения книг с информацией о деталях и статусе займа
-  let query = `
-    SELECT 
-      Books.*, 
-      Loans.loan_id, 
-      Loans.return_date, 
-      bookdetails.summary, 
-      bookdetails.page_count
-    FROM 
-      Books
-    LEFT JOIN 
-      Loans ON Books.book_id = Loans.book_id AND Loans.user_id = ? AND Loans.return_date IS NULL
-    LEFT JOIN 
-      bookdetails ON Books.book_id = bookdetails.book_id
+  // Запрос для подсчета общего количества книг с учетом фильтров и поиска
+  let countQuery = `
+    SELECT COUNT(*) as total
+    FROM Books
+    LEFT JOIN Loans ON Books.book_id = Loans.book_id AND Loans.user_id = ? AND Loans.return_date IS NULL
   `;
-
+  let whereClauses = [];
   const queryParams = [userId];
 
-  // Если включен фильтр для доступных книг, добавляем условие
   if (filterAvailable) {
-    query += " WHERE Books.availability_status = 'available'";
+    whereClauses.push("Books.availability_status = 'available'");
   }
-
-  // Если включен фильтр для взятых книг, добавляем условие для показа только тех книг, которые пользователь взял
   if (filterBorrowed) {
-    if (filterAvailable) {
-      query += " AND Loans.loan_id IS NOT NULL";
-    } else {
-      query += " WHERE Loans.loan_id IS NOT NULL";
-    }
+    whereClauses.push("Loans.loan_id IS NOT NULL");
+  }
+  if (searchQuery) {
+    whereClauses.push(`
+      (Books.title LIKE ? OR 
+       Books.author LIKE ? OR 
+       Books.genre LIKE ? OR 
+       Books.published_year LIKE ?)
+    `);
+    queryParams.push(`%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`);
   }
 
-  // Выполняем запрос с параметрами
-  connection.query(query, queryParams, (err, results) => {
+  if (whereClauses.length > 0) {
+    countQuery += ' WHERE ' + whereClauses.join(' AND ');
+  }
+
+  connection.query(countQuery, queryParams, (err, countResults) => {
     if (err) throw err;
 
-    // Рендерим страницу с книгами и передаем значения фильтров
-    res.render('books', { books: results, user: req.user, filterAvailable, filterBorrowed });
+    const totalItems = countResults[0].total;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    // Основной запрос для получения книг с учетом фильтров, поиска и пагинации
+    let query = `
+      SELECT 
+        Books.*, 
+        Loans.loan_id, 
+        Loans.return_date, 
+        bookdetails.summary, 
+        bookdetails.page_count
+      FROM 
+        Books
+      LEFT JOIN 
+        Loans ON Books.book_id = Loans.book_id AND Loans.user_id = ? AND Loans.return_date IS NULL
+      LEFT JOIN 
+        bookdetails ON Books.book_id = bookdetails.book_id
+    `;
+
+    if (whereClauses.length > 0) {
+      query += ' WHERE ' + whereClauses.join(' AND ');
+    }
+
+    query += ' LIMIT ? OFFSET ?';
+    const queryParamsWithPagination = [...queryParams, itemsPerPage, offset];
+
+    connection.query(query, queryParamsWithPagination, (err, results) => {
+      if (err) throw err;
+
+      res.render('books', {
+        books: results,
+        user: req.user,
+        filterAvailable,
+        filterBorrowed,
+        searchQuery,
+        currentPage,
+        totalPages,
+      });
+    });
   });
 });
 
@@ -385,7 +422,7 @@ app.get('/my-history', authenticateToken, (req, res) => {
 });
 
 
-app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {
+app.get('/users', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
   connection.query('SELECT * FROM users', (err, results) => {
     if (err) throw err;
 
@@ -394,13 +431,31 @@ app.get('/users', authenticateToken, authorizeAdmin, (req, res) => {
       user.registration_date = new Date(user.registration_date).toLocaleString();
     });
 
-    // Отправляем данные на страницу
-    res.render('users', { users: results });
+    // Отправляем данные на страницу вместе с ролью текущего пользователя
+    res.render('users', { users: results, currentUserRole: req.user.role });
+  });
+});
+
+app.post('/users/:id/delete', (req, res) => {
+  const userId = req.params.id;
+
+  // Сначала удаляем все займы пользователя
+  connection.query('DELETE FROM loans WHERE user_id = ?', [userId], (err) => {
+    if (err) return res.status(500).send('Ошибка при удалении займов.');
+
+    // Теперь удаляем пользователя
+    connection.query('DELETE FROM users WHERE user_id = ?', [userId], (err) => {
+      if (err) return res.status(500).send('Ошибка при удалении пользователя.');
+      
+      res.redirect('/users');
+    });
   });
 });
 
 
-app.get('/loans', authenticateToken, authorizeAdmin, (req, res) => {
+
+
+app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
   const page = parseInt(req.query.page) || 1;  // Получаем номер текущей страницы
   const limit = 25;  // Количество операций на странице
   const offset = (page - 1) * limit; // Вычисляем смещение
@@ -413,7 +468,6 @@ app.get('/loans', authenticateToken, authorizeAdmin, (req, res) => {
     const totalLoans = countResult[0].total;  // Общее количество операций
     const totalPages = Math.ceil(totalLoans / limit);  // Общее количество страниц
 
-    
     // Запрос для получения данных с учетом лимита и смещения
     const loansQuery = `
       SELECT 
@@ -430,8 +484,6 @@ app.get('/loans', authenticateToken, authorizeAdmin, (req, res) => {
 
     connection.query(loansQuery, [limit, offset], (err, results) => {
       if (err) throw err;
-
-      
 
       // Форматируем даты перед отправкой
       results.forEach(loan => {

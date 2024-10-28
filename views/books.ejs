@@ -11,15 +11,16 @@
   <div class="container">
     <h1 class="text-center">Список доступных книг</h1>
     
-    <!-- Поисковая строка -->
-    <input 
-      type="text" 
-      id="searchInput" 
-      onkeyup="filterTable()" 
-      placeholder="Поиск по названию, автору, жанру или году" 
-      class="form-control"
-    >
     <form method="GET" action="/books" class="mb-3">
+      <input 
+        type="text" 
+        id="searchInput" 
+        name="searchQuery"
+        placeholder="Поиск по названию, автору, жанру или году" 
+        class="form-control"
+      >
+      <button type="submit" class="btn btn-gray">Поиск</button> <!-- Изменили на btn btn-gray -->
+    
       <label>
         <input 
           type="checkbox" 
@@ -96,21 +97,19 @@
       </tbody>
     </table>
 
-<!-- Кнопки администратора и "Выйти" -->
-<div class="admin-buttons">
-  <% if (user && user.role === 'admin') { %>
-    <a href="/loans" class="btn btn-gray">История</a>
-    <a href="/users" class="btn btn-gray">Пользователи</a>
-    <!-- Новая кнопка для добавления книги -->
-    <a href="/books/add" class="btn btn-gray">Добавить книгу</a>
-  <% } %>
-  <!-- Кнопка "Моя история" для всех пользователей -->
-  <a href="/my-history" class="btn btn-gray">Моя история</a>
-
-  <a href="/" class="btn btn-gray">Выйти</a>
-</div>
-
-
+    <!-- Кнопки администратора и "Выйти" -->
+    <div class="admin-buttons">
+      <% if (user && user.role === 'admin') { %>
+        <a href="/loans" class="btn btn-gray">История</a>
+        <a href="/users" class="btn btn-gray">Пользователи</a>
+        <a href="/books/add" class="btn btn-gray">Добавить книгу</a>
+      <% } else if (user && user.role === 'librarian') { %>
+        <a href="/loans" class="btn btn-gray">История</a>
+        <a href="/users" class="btn btn-gray">Пользователи</a>
+      <% } %>
+      <a href="/my-history" class="btn btn-gray">Моя история</a>
+      <a href="/" class="btn btn-gray">Выйти</a>
+    </div>
   </div>
 
   <!-- Всплывающее окно -->
@@ -122,7 +121,16 @@
       <p id="pageCount"></p>
     </div>
   </div>
-
+  <div class="pagination">
+    <% if (currentPage > 1) { %>
+      <a href="?page=<%= currentPage - 1 %>&filterAvailable=<%= filterAvailable %>&filterBorrowed=<%= filterBorrowed %>" class="btn btn-primary">Назад</a>
+    <% } %>
+    <span>Страница <%= currentPage %> из <%= totalPages %></span>
+    <% if (currentPage < totalPages) { %>
+      <a href="?page=<%= currentPage + 1 %>&filterAvailable=<%= filterAvailable %>&filterBorrowed=<%= filterBorrowed %>" class="btn btn-primary">Вперед</a>
+    <% } %>
+  </div>
+  
   <script>
     const books = <%- JSON.stringify(books) %>; // Преобразуем массив books в JSON
   </script>

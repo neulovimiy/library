@@ -24,4 +24,11 @@ function authorizeAdmin(req, res, next) {
   next();
 }
 
-module.exports = { authenticateToken, authorizeAdmin };
+function authorizeLibrarianOrAdmin(req, res, next) {
+  if (req.user.role === 'librarian' || req.user.role === 'admin') {
+    return next();
+  }
+  return res.status(403).send('Доступ запрещен');
+}
+
+module.exports = { authenticateToken, authorizeAdmin, authorizeLibrarianOrAdmin };

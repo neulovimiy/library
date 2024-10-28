@@ -20,6 +20,9 @@
           <th>Email</th>
           <th>Роль</th>
           <th>Дата регистрации</th>
+          <% if (currentUserRole === 'admin') { %>
+            <th>Функции</th>
+          <% } %>
         </tr>
       </thead>
       <tbody>
@@ -30,9 +33,17 @@
             <td><%= user.email %></td>
             <td><%= user.role %></td>
             <td><%= user.registration_date %></td>
+            <% if (currentUserRole === 'admin') { %>
+              <td>
+                <form action="/users/<%= user.user_id %>/delete" method="POST" class="d-inline">
+                  <button type="submit" class="btn btn-danger">Удалить</button> <!-- Удаляем встроенные стили -->
+                </form>
+              </td>
+            <% } %>
           </tr>
         <% }); %>
       </tbody>
+      
     </table>
 
     <br />
