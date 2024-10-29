@@ -421,9 +421,14 @@ app.get('/my-history', authenticateToken, (req, res) => {
   });
 });
 
-
 app.get('/users', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
-  connection.query('SELECT * FROM users', (err, results) => {
+  const searchQuery = req.query.searchQuery || ''; // Получаем значение поиска
+
+  // Создаем SQL-запрос с учетом поиска
+  const sql = `SELECT * FROM users WHERE name LIKE ? OR email LIKE ? OR user_id LIKE ?`;
+  const queryParams = [`%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`];
+
+  connection.query(sql, queryParams, (err, results) => {
     if (err) throw err;
 
     // Форматируем дату перед отправкой
@@ -432,9 +437,10 @@ app.get('/users', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
     });
 
     // Отправляем данные на страницу вместе с ролью текущего пользователя
-    res.render('users', { users: results, currentUserRole: req.user.role });
+    res.render('users', { users: results, currentUserRole: req.user.role, searchQuery });
   });
 });
+
 
 app.post('/users/:id/delete', (req, res) => {
   const userId = req.params.id;
@@ -454,21 +460,29 @@ app.post('/users/:id/delete', (req, res) => {
 
 
 
-
 app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
-  const page = parseInt(req.query.page) || 1;  // Получаем номер текущей страницы
-  const limit = 25;  // Количество операций на странице
-  const offset = (page - 1) * limit; // Вычисляем смещение
+  const page = parseInt(req.query.page) || 1; 
+  const limit = 25; 
+  const offset = (page - 1) * limit; 
+  const searchQuery = req.query.searchQuery || ''; 
 
-  // Запрос для получения общего количества записей
-  const countQuery = 'SELECT COUNT(*) AS total FROM Loans';
-  connection.query(countQuery, (err, countResult) => {
+  console.log('Search Query:', searchQuery); // Логирование
+
+  const countQuery = `
+    SELECT COUNT(*) AS total 
+    FROM Loans 
+    JOIN Books ON Loans.book_id = Books.book_id
+    JOIN Users ON Loans.user_id = Users.user_id
+    WHERE Books.title LIKE ? OR Users.name LIKE ?`;
+
+  const countParams = [`%${searchQuery}%`, `%${searchQuery}%`];
+
+  connection.query(countQuery, countParams, (err, countResult) => {
     if (err) throw err;
 
-    const totalLoans = countResult[0].total;  // Общее количество операций
-    const totalPages = Math.ceil(totalLoans / limit);  // Общее количество страниц
+    const totalLoans = countResult[0].total;  
+    const totalPages = Math.ceil(totalLoans / limit);  
 
-    // Запрос для получения данных с учетом лимита и смещения
     const loansQuery = `
       SELECT 
         Loans.loan_id, 
@@ -479,23 +493,29 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
       FROM Loans
       JOIN Books ON Loans.book_id = Books.book_id
       JOIN Users ON Loans.user_id = Users.user_id
-      ORDER BY Loans.loan_id ASC  -- Сортировка по loan_id
+      WHERE Books.title LIKE ? OR Users.name LIKE ?
+      ORDER BY Loans.loan_id ASC  
       LIMIT ? OFFSET ?`;
 
-    connection.query(loansQuery, [limit, offset], (err, results) => {
+    const loansParams = [`%${searchQuery}%`, `%${searchQuery}%`, limit, offset];
+
+    console.log('Loans Query:', loansQuery, loansParams); // Логирование
+
+    connection.query(loansQuery, loansParams, (err, results) => {
       if (err) throw err;
 
-      // Форматируем даты перед отправкой
+      console.log('Results:', results); // Логирование
+
       results.forEach(loan => {
         loan.issue_date = new Date(loan.issue_date).toLocaleString();
         loan.return_date = loan.return_date ? new Date(loan.return_date).toLocaleString() : 'Не возвращена';
       });
 
-      // Отправляем данные на страницу
       res.render('loans', {
         loans: results,
         currentPage: page,
-        totalPages: totalPages
+        totalPages: totalPages,
+        searchQuery  
       });
     });
   });

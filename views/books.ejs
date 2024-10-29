@@ -19,7 +19,16 @@
         placeholder="Поиск по названию, автору, жанру или году" 
         class="form-control"
       >
-      <button type="submit" class="btn btn-gray">Поиск</button> <!-- Изменили на btn btn-gray -->
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="submit" class="btn btn-gray">Поиск</button>
+        <img 
+          src="/images/reset.png" 
+          alt="Сбросить" 
+          onclick="resetSearch()" 
+          class="reset-icon"
+          style="cursor: pointer; width: 20px; height: 20px;"
+        >
+      </div>
     
       <label>
         <input 
@@ -135,6 +144,12 @@
     const books = <%- JSON.stringify(books) %>; // Преобразуем массив books в JSON
   </script>
   <script src="/js/books.js"></script>
+  <script>
+    function resetSearch() {
+      // Перенаправление на /books без параметров для сброса поиска
+      window.location.href = '/books';
+    }
+  </script>
   
 </body>  
 </html>

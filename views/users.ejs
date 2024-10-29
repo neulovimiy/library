@@ -11,8 +11,32 @@
   <div class="container">
     <h1 class="text-center">Список пользователей</h1>
     
+    <form method="GET" action="/users" class="mb-3" style="display: flex; flex-direction: column;">
+      <input 
+        type="text" 
+        id="searchInput" 
+        name="searchQuery"
+        placeholder="Поиск по ID, имени или email" 
+        class="form-control"
+        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+        style="width: 100%; margin-bottom: 10px;"
+      >
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="submit" class="btn btn-gray">Поиск</button>
+        <img 
+          src="/images/reset.png" 
+          alt="Сбросить" 
+          onclick="resetSearch()" 
+          class="reset-icon"
+          style="cursor: pointer; width: 20px; height: 20px;"
+        >
+      </div>
+    </form>
+    
+    
+
     <!-- Таблица пользователей -->
-    <table class="table">
+    <table class="table scrollable-table">
       <thead>
         <tr>
           <th>ID</th>
@@ -36,19 +60,25 @@
             <% if (currentUserRole === 'admin') { %>
               <td>
                 <form action="/users/<%= user.user_id %>/delete" method="POST" class="d-inline">
-                  <button type="submit" class="btn btn-danger">Удалить</button> <!-- Удаляем встроенные стили -->
+                  <button type="submit" class="btn btn-danger">Удалить</button>
                 </form>
               </td>
             <% } %>
           </tr>
         <% }); %>
       </tbody>
-      
     </table>
 
     <br />
-    <a href="/books" class="btn btn-secondary">Назад</a> <!-- Кнопка "Назад" -->
+    <a href="/books" class="btn btn-secondary">Назад</a>
     <a href="/" class="btn">Выйти</a>
   </div>
 </body>
+<script>
+  function resetSearch() {
+    // Перенаправление на /users без параметров для сброса поиска
+    window.location.href = '/users';
+  }
+</script>
+
 </html>

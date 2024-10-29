@@ -33,7 +33,30 @@
 <body>
   <div class="container">
     <h1 class="text-center">Список выданных книг</h1>
+
+    <form method="GET" action="/loans" class="mb-3" style="display: flex; flex-direction: column;">
+      <input 
+        type="text" 
+        id="searchInput" 
+        name="searchQuery"
+        placeholder="Поиск по названию книги или имени пользователя" 
+        class="form-control"
+        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+        style="width: 100%; margin-bottom: 10px;"
+      >
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="submit" class="btn btn-gray">Поиск</button>
+        <img 
+          src="/images/reset.png" 
+          alt="Сбросить" 
+          onclick="resetSearch()" 
+          class="reset-icon"
+          style="cursor: pointer; width: 20px; height: 20px;"
+        >
+      </div>
+    </form>
     
+
     <!-- Обертка для таблицы с прокруткой -->
     <div class="table-wrapper">
       <table class="table">
@@ -70,4 +93,11 @@
   </script>
   <script src="/js/books.js"></script>
 </body>
+<script>
+  function resetSearch() {
+    // Перенаправление на /loans без параметров для сброса поиска
+    window.location.href = '/loans';
+  }
+</script>
+
 </html>

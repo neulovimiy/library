@@ -254,4 +254,19 @@ input[type="checkbox"] {
   font-weight: bold;
 }
 
+.scrollable-table {
+  max-height: 800px; /* Ограничиваем высоту таблицы */
+  overflow-y: auto; /* Включаем вертикальный скролл */
+  display: block; /* Устанавливаем display: block для правильной работы прокрутки */
+}
+
+/* Для фиксированной шапки таблицы */
+.scrollable-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #f2f2f2;
+  z-index: 1;
+}
+
+
   
