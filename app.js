@@ -441,6 +441,39 @@ app.get('/users', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
   });
 });
 
+// Маршрут для отображения страницы редактирования
+app.get('/books/edit/:id', async (req, res) => {
+  const bookId = req.params.id;
+  try {
+    // Запрос книги из базы данных по bookId с использованием промисов
+    const [rows] = await connection.promise().query('SELECT * FROM Books WHERE book_id = ?', [bookId]);
+
+    res.render('editBook', { book: rows[0], user: req.user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Ошибка при получении данных книги');
+  }
+});
+
+// Маршрут для сохранения изменений
+app.post('/books/edit/:id', async (req, res) => {
+  const bookId = req.params.id;
+  const { title, author, genre, published_year, availability_status, available_count } = req.body;
+
+  try {
+    // Обновление книги в базе данных
+    await connection.promise().query(
+      'UPDATE Books SET title = ?, author = ?, genre = ?, published_year = ?, availability_status = ?, available_count = ? WHERE book_id = ?',
+      [title, author, genre, published_year, availability_status, available_count, bookId]
+    );
+
+    // Перенаправление на страницу /books после сохранения
+    res.redirect('/books');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Ошибка при обновлении данных книги');
+  }
+});
 
 app.post('/users/:id/delete', (req, res) => {
   const userId = req.params.id;
@@ -466,7 +499,7 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
   const offset = (page - 1) * limit; 
   const searchQuery = req.query.searchQuery || ''; 
 
-  console.log('Search Query:', searchQuery); // Логирование
+  logger.info('Search Query:', searchQuery); // Логирование
 
   const countQuery = `
     SELECT COUNT(*) AS total 
@@ -499,12 +532,12 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
 
     const loansParams = [`%${searchQuery}%`, `%${searchQuery}%`, limit, offset];
 
-    console.log('Loans Query:', loansQuery, loansParams); // Логирование
+    logger.info('Loans Query:', loansQuery, loansParams); // Логирование
 
     connection.query(loansQuery, loansParams, (err, results) => {
       if (err) throw err;
 
-      console.log('Results:', results); // Логирование
+      logger.info('Results:', results); // Логирование
 
       results.forEach(loan => {
         loan.issue_date = new Date(loan.issue_date).toLocaleString();

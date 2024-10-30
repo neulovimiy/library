@@ -89,18 +89,27 @@
             </td>
             
             <td>
-              <% if (!book.loan_id && book.availability_status === 'available' && book.available_count > 0) { %>
-                <form action="/books/take/<%= book.book_id %>" method="POST" class="d-inline">
-                  <button type="submit" class="btn btn-success">Взять</button>
-                </form>
-              <% } else if (book.loan_id) { %>
-                <form action="/books/return/<%= book.book_id %>" method="POST" class="d-inline">
-                  <button type="submit" class="btn btn-warning">Вернуть</button>
-                </form>
-              <% } else { %>
-                <p>Нет возможностей</p>
-              <% } %>
+              <div class="action-buttons">
+                <% if (!book.loan_id && book.availability_status === 'available' && book.available_count > 0) { %>
+                  <form action="/books/take/<%= book.book_id %>" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success">Взять</button>
+                  </form>
+                <% } else if (book.loan_id) { %>
+                  <form action="/books/return/<%= book.book_id %>" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-warning">Вернуть</button>
+                  </form>
+                <% } else { %>
+                  <button class="btn-disabled" disabled>Нельзя взять книгу</button>
+                <% } %>
+                                   
+                <% if (user && user.role === 'admin') { %>
+                  <a href="/books/edit/<%= book.book_id %>" class="edit-button">
+                    <img src="/images/edit.png" alt="Редактировать" class="edit-icon">
+                  </a>
+                <% } %>
+              </div>
             </td>
+                       
           </tr>
         <% }); %>
       </tbody>

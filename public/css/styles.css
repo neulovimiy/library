@@ -268,5 +268,46 @@ input[type="checkbox"] {
   z-index: 1;
 }
 
+.action-buttons {
+  display: flex;
+  align-items: center; /* Выровнять элементы по центру по вертикали */
+  gap: 10px; /* Отступ между кнопками */
+}
+
+.edit-button {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.edit-icon {
+  width: 70px;
+  height: 60px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background-color: #d3d3d3; /* Серый цвет для недоступной кнопки */
+  color: #555; /* Цвет текста */
+  cursor: not-allowed; /* Курсор для недоступной кнопки */
+  border: 1px solid #ccc; /* Похожий стиль границы */
+  padding: 5px 10px; /* Размеры кнопки, чтобы совпадали с другими */
+}
+
+.btn-disabled {
+  background-color: #f0f0f0 !important; /* Светло-серый фон */
+  color: #888 !important; /* Серый текст */
+  border: 1px solid #ccc !important; /* Серый контур */
+  padding: 5px 10px !important; /* Размеры */
+  cursor: not-allowed !important; /* Курсор недоступности */
+  pointer-events: none; /* Отключение любых взаимодействий */
+}
+
+/* Для отключения эффекта при наведении */
+.btn-disabled:hover {
+  background-color: #f0f0f0 !important;
+  color: #888 !important;
+}
+
 
   

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Редактировать книгу</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Редактирование книги</h1>
+    
+    <form action="/books/edit/<%= book.book_id %>" method="POST">
+      <label for="title">Название</label>
+      <input type="text" id="title" name="title" value="<%= book.title %>" required>
+      
+      <label for="author">Автор</label>
+      <input type="text" id="author" name="author" value="<%= book.author %>" required>
+      
+      <label for="genre">Жанр</label>
+      <input type="text" id="genre" name="genre" value="<%= book.genre %>">
+      
+      <label for="published_year">Год публикации</label>
+      <input type="number" id="published_year" name="published_year" value="<%= book.published_year %>">
+      
+      <label for="availability_status">Статус доступности</label>
+      <select id="availability_status" name="availability_status">
+        <option value="available" <% if (book.availability_status === 'available') { %>selected<% } %>>Доступно</option>
+        <option value="unavailable" <% if (book.availability_status === 'unavailable') { %>selected<% } %>>Недоступно</option>
+      </select>
+      
+      <label for="available_count">Количество доступных копий</label>
+      <input type="number" id="available_count" name="available_count" value="<%= book.available_count %>" required>
+      
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      <a href="/books" class="btn btn-secondary">Отмена</a>
+    </form>
+  </div>
+</body>
+</html>
