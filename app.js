@@ -5,24 +5,20 @@ const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const path = require('path');  // Для работы с путями файлов
 const { authenticateToken, authorizeAdmin, authorizeLibrarianOrAdmin } = require('./middleware');
-
 const logger = require('./logger'); // Подключаем логгер
 const app = express();
 const cookieParser = require('cookie-parser');
-app.use(cookieParser());
 
+app.use(cookieParser());
 // Подключаем модуль для авторизации (регистрация и логин)
 const authRoutes = require('./auth');
 app.use(express.static('public'));
-
 // Настроим парсинг данных формы
 app.use(bodyParser.urlencoded({ extended: true }));  // Для обработки данных форм
 app.use(bodyParser.json());  // Для обработки JSON данных
-
 // Устанавливаем EJS как шаблонизатор
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));  // Указываем папку для шаблонов
-
 // Настройка соединения с базой данных
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -182,7 +178,6 @@ app.post('/books/add', authenticateToken, (req, res) => {
     res.redirect('/books');
   });
 });
-
 
 // Маршрут для взятия книги
 app.post('/books/take/:id', authenticateToken, (req, res) => {
@@ -445,8 +440,13 @@ app.get('/users', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
 app.get('/books/edit/:id', async (req, res) => {
   const bookId = req.params.id;
   try {
-    // Запрос книги из базы данных по bookId с использованием промисов
-    const [rows] = await connection.promise().query('SELECT * FROM Books WHERE book_id = ?', [bookId]);
+    // Запрос объединенных данных из Books и bookdetails
+    const [rows] = await connection.promise().query(`
+      SELECT Books.*, bookdetails.summary, bookdetails.page_count
+      FROM Books
+      LEFT JOIN bookdetails ON Books.book_id = bookdetails.book_id
+      WHERE Books.book_id = ?
+    `, [bookId]);
 
     res.render('editBook', { book: rows[0], user: req.user });
   } catch (error) {
@@ -455,25 +455,31 @@ app.get('/books/edit/:id', async (req, res) => {
   }
 });
 
-// Маршрут для сохранения изменений
+// Маршрут для обновления данных книги
 app.post('/books/edit/:id', async (req, res) => {
+  const { title, author, genre, published_year, availability_status, available_count, summary, page_count } = req.body;
   const bookId = req.params.id;
-  const { title, author, genre, published_year, availability_status, available_count } = req.body;
 
   try {
-    // Обновление книги в базе данных
+    // Обновляем данные в таблице Books
     await connection.promise().query(
       'UPDATE Books SET title = ?, author = ?, genre = ?, published_year = ?, availability_status = ?, available_count = ? WHERE book_id = ?',
       [title, author, genre, published_year, availability_status, available_count, bookId]
     );
 
-    // Перенаправление на страницу /books после сохранения
+    // Обновляем данные в таблице bookdetails
+    await connection.promise().query(
+      'UPDATE bookdetails SET summary = ?, page_count = ? WHERE book_id = ?',
+      [summary, page_count, bookId]
+    );
+
     res.redirect('/books');
   } catch (error) {
     console.error(error);
     res.status(500).send('Ошибка при обновлении данных книги');
   }
 });
+
 
 app.post('/users/:id/delete', (req, res) => {
   const userId = req.params.id;
@@ -490,8 +496,6 @@ app.post('/users/:id/delete', (req, res) => {
     });
   });
 });
-
-
 
 app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
   const page = parseInt(req.query.page) || 1; 
@@ -553,7 +557,6 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
     });
   });
 });
-
 
 // Запуск сервера на порту 3000
 app.listen(3000, () => {

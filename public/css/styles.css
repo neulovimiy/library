@@ -309,5 +309,47 @@ input[type="checkbox"] {
   color: #888 !important;
 }
 
+.edit-book-container {
+  max-width: 500px; /* Увеличиваем ширину окна */
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.edit-book-container h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.edit-book-container label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.edit-book-container input[type="text"],
+.edit-book-container input[type="number"],
+.edit-book-container select,
+.edit-book-container textarea {
+  width: 100%; /* Занимает всю ширину контейнера */
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.edit-book-container button,
+.edit-book-container .btn-secondary {
+  width: 100%;
+  padding: 10px;
+  margin-top: 15px;
+}
+
+.edit-book-container .btn-secondary {
+  background-color: #ddd;
+  color: #333;
+}
 
   
