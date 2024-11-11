@@ -352,4 +352,23 @@ input[type="checkbox"] {
   color: #333;
 }
 
+.btn-take {
+  background-color: #afeeb1; /* Зеленый цвет для кнопки "Взять" */
+  color: white;
+}
+
+.btn-return {
+  background-color: #32a439; /* Оранжевый цвет для кнопки "Вернуть" */
+  color: white;
+}
+
+.btn-take:hover {
+  background-color: #90f495; /* Более темный зеленый при наведении */
+}
+
+.btn-return:hover {
+  background-color: #1b8532; /* Более темный оранжевый при наведении */
+}
+
+
   

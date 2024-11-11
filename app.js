@@ -436,6 +436,7 @@ app.get('/users', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
   });
 });
 
+
 // Маршрут для отображения страницы редактирования
 app.get('/books/edit/:id', async (req, res) => {
   const bookId = req.params.id;
@@ -497,13 +498,29 @@ app.post('/users/:id/delete', (req, res) => {
   });
 });
 
+// Удаление записи о займе
+app.post('/loans/:id/delete', (req, res) => {
+  const loanId = req.params.id;
+
+  // Удаляем запись о займе
+  connection.query('DELETE FROM loans WHERE loan_id = ?', [loanId], (err) => {
+    if (err) return res.status(500).send('Ошибка при удалении займа.');
+
+    // Перенаправляем на страницу со списком выданных книг
+    res.redirect('/loans');
+  });
+});
+
 app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
   const page = parseInt(req.query.page) || 1; 
   const limit = 25; 
   const offset = (page - 1) * limit; 
   const searchQuery = req.query.searchQuery || ''; 
-
-  logger.info('Search Query:', searchQuery); // Логирование
+  
+  // Assuming the user's role is stored in req.user.role by the authorizeLibrarianOrAdmin middleware
+  const currentUserRole = req.user.role;  // This is where you get the role of the current user
+  
+  logger.info('Search Query:', searchQuery); // Log search query
 
   const countQuery = `
     SELECT COUNT(*) AS total 
@@ -536,12 +553,12 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
 
     const loansParams = [`%${searchQuery}%`, `%${searchQuery}%`, limit, offset];
 
-    logger.info('Loans Query:', loansQuery, loansParams); // Логирование
+    logger.info('Loans Query:', loansQuery, loansParams); // Log query details
 
     connection.query(loansQuery, loansParams, (err, results) => {
       if (err) throw err;
 
-      logger.info('Results:', results); // Логирование
+      logger.info('Results:', results); // Log the results
 
       results.forEach(loan => {
         loan.issue_date = new Date(loan.issue_date).toLocaleString();
@@ -552,11 +569,13 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
         loans: results,
         currentPage: page,
         totalPages: totalPages,
-        searchQuery  
+        searchQuery,
+        currentUserRole // Add the current user role to the template
       });
     });
   });
 });
+
 
 // Запуск сервера на порту 3000
 app.listen(3000, () => {

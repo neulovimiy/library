@@ -33,9 +33,6 @@
       </div>
     </form>
     
-    
-
-    <!-- Таблица пользователей -->
     <table class="table scrollable-table">
       <thead>
         <tr>
@@ -44,9 +41,7 @@
           <th>Email</th>
           <th>Роль</th>
           <th>Дата регистрации</th>
-          <% if (currentUserRole === 'admin') { %>
-            <th>Функции</th>
-          <% } %>
+          <th>Функции</th>
         </tr>
       </thead>
       <tbody>
@@ -57,18 +52,20 @@
             <td><%= user.email %></td>
             <td><%= user.role %></td>
             <td><%= user.registration_date %></td>
-            <% if (currentUserRole === 'admin') { %>
-              <td>
-                <form action="/users/<%= user.user_id %>/delete" method="POST" class="d-inline">
-                  <button type="submit" class="btn btn-danger">Удалить</button>
-                </form>
-              </td>
-            <% } %>
+            <td>
+              <form action="/users/<%= user.user_id %>/delete" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-danger" <% if (currentUserRole !== 'admin') { %>disabled<% } %>>Удалить</button>
+              </form>
+              <% if (currentUserRole === 'librarian') { %>
+                <div class="text-muted">Нет доступа</div>
+              <% } %>
+            </td>
           </tr>
         <% }); %>
       </tbody>
     </table>
-
+    
+    
     <br />
     <a href="/books" class="btn btn-secondary">Назад</a>
     <a href="/" class="btn">Выйти</a>

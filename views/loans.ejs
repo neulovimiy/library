@@ -67,6 +67,7 @@
             <th>Имя пользователя</th>
             <th>Дата выдачи</th>
             <th>Дата возврата</th>
+            <th>Функции</th>
           </tr>
         </thead>
         <tbody>
@@ -77,9 +78,23 @@
               <td><%= loan.user_name %></td>
               <td><%= loan.issue_date %></td>
               <td><%= loan.return_date %></td>
+              <td>
+                <% if (currentUserRole === 'admin') { %>
+                  <!-- Кнопка доступна только для админа -->
+                  <form action="/loans/<%= loan.loan_id %>/delete" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                  </form>
+                <% } else if (currentUserRole === 'librarian') { %>
+                  <!-- Для библиотекаря кнопка есть, но она заблокирована -->
+                  <button class="btn btn-danger" disabled>Удалить</button>
+                  <p>Нет доступа</p>
+                <% } %>
+              </td>
+              
             </tr>
           <% }); %>
         </tbody>
+        
       </table>
     </div>
     
