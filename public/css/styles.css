@@ -370,5 +370,15 @@ input[type="checkbox"] {
   background-color: #1b8532; /* Более темный оранжевый при наведении */
 }
 
+.custom-delete-btn {
+  background-color: #dc3545; /* Красный цвет */
+  border-color: #dc3545;     /* Красная рамка */
+  color: white;              /* Белый цвет текста */
+}
+
+.custom-delete-btn:hover {
+  background-color: #c82333; /* Темно-красный цвет при наведении */
+  border-color: #bd2130;     /* Темно-красная рамка при наведении */
+}
 
   

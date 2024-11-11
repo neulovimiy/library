@@ -146,7 +146,7 @@ app.post('/login', (req, res) => {
 
 // Маршрут для отображения страницы добавления книги (доступно только администратору)
 app.get('/books/add', authenticateToken, (req, res) => {
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin' && req.user.role !== 'librarian') {
     return res.status(403).send('Доступ запрещен');
   }
   res.render('add-book'); // Создаем новый шаблон add-book.ejs
@@ -154,7 +154,7 @@ app.get('/books/add', authenticateToken, (req, res) => {
 
 // Маршрут для обработки добавления новой книги
 app.post('/books/add', authenticateToken, (req, res) => {
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin' && req.user.role !== 'librarian' ) {
     return res.status(403).send('Доступ запрещен');
   }
 
@@ -260,6 +260,116 @@ app.post('/books/take/:id', authenticateToken, (req, res) => {
   });
 });
 
+// Маршрут для удаления книги
+app.post('/books/delete/:id', authenticateToken, (req, res) => {
+  const bookId = req.params.id;
+
+  // Проверка на роль администратора или библиотекаря
+  if (req.user.role !== 'admin' && req.user.role !== 'librarian') {
+    return res.status(403).send('Доступ запрещен');
+  }
+
+  // Удаление всех записей, связанных с книгой (например, записи о выдаче)
+  const deleteLoansQuery = `
+    DELETE FROM Loans WHERE book_id = ?
+  `;
+  
+  connection.query(deleteLoansQuery, [bookId], (err) => {
+    if (err) {
+      console.error('Ошибка при удалении записей о выдаче:', err);
+      return res.status(500).send('Ошибка сервера');
+    }
+
+    // Удаление самой книги
+    const deleteBookQuery = `
+      DELETE FROM Books WHERE book_id = ?
+    `;
+
+    connection.query(deleteBookQuery, [bookId], (err) => {
+      if (err) {
+        console.error('Ошибка при удалении книги:', err);
+        return res.status(500).send('Ошибка сервера');
+      }
+
+      // Перенаправление на страницу списка книг после удаления
+      res.redirect('/books');
+    });
+  });
+});
+
+app.get('/books/issue/:id', authenticateToken, (req, res) => {
+  const bookId = req.params.id;
+
+  // Получаем список пользователей
+  const getUsersQuery = 'SELECT user_id, name FROM Users WHERE role = "user"';
+  connection.query(getUsersQuery, (err, users) => {
+    if (err) {
+      logger.error('Ошибка при получении списка пользователей:', err);
+      return res.status(500).send('Ошибка сервера');
+    }
+    
+    // Рендерим страницу с выбором пользователя
+    res.render('issue_book', { bookId, users });
+  });
+});
+
+app.post('/books/issue/:id', authenticateToken, (req, res) => {
+  const bookId = req.params.id;
+  const userId = req.body.userId;
+
+  connection.beginTransaction((err) => {
+    if (err) {
+      logger.error('Ошибка при начале транзакции:', err);
+      return res.status(500).send('Ошибка сервера');
+    }
+
+    // Проверка доступности книги
+    const checkBookQuery = 'SELECT available_count FROM Books WHERE book_id = ? FOR UPDATE';
+    connection.query(checkBookQuery, [bookId], (err, results) => {
+      if (err) {
+        logger.error('Ошибка при проверке книги:', err);
+        return connection.rollback(() => res.status(500).send('Ошибка сервера'));
+      }
+
+      if (results.length === 0 || results[0].available_count <= 0) {
+        return connection.rollback(() => res.status(400).send('Книга больше недоступна'));
+      }
+
+      const availableCount = results[0].available_count - 1;
+      const newStatus = availableCount > 0 ? 'available' : 'unavailable';
+
+      // Обновление книги
+      const updateBookQuery = 'UPDATE Books SET available_count = ?, availability_status = ? WHERE book_id = ?';
+      connection.query(updateBookQuery, [availableCount, newStatus, bookId], (err) => {
+        if (err) {
+          logger.error('Ошибка при обновлении книги:', err);
+          return connection.rollback(() => res.status(500).send('Ошибка сервера'));
+        }
+
+        // Добавление записи о выдаче книги
+        const insertLoanQuery = 'INSERT INTO loans (book_id, user_id, issue_date) VALUES (?, ?, NOW())';
+        connection.query(insertLoanQuery, [bookId, userId], (err) => {
+          if (err) {
+            logger.error('Ошибка при создании записи в loans:', err);
+            return connection.rollback(() => res.status(500).send('Ошибка сервера'));
+          }
+
+          // Завершение транзакции
+          connection.commit((err) => {
+            if (err) {
+              logger.error('Ошибка при коммите транзакции:', err);
+              return connection.rollback(() => res.status(500).send('Ошибка сервера'));
+            }
+            res.redirect('/books');
+          });
+        });
+      });
+    });
+  });
+});
+
+
+
 // Маршрут для возврата книги
 app.post('/books/return/:id', authenticateToken, (req, res) => {
   const bookId = req.params.id;
@@ -302,6 +412,69 @@ app.post('/books/return/:id', authenticateToken, (req, res) => {
     }
   });
 });
+
+app.post('/loans/return/:id', authenticateToken, (req, res) => {
+  const loanId = req.params.id;
+  const userId = req.user.userId; // Получаем ID пользователя из токена
+  const userRole = req.user.role; // Получаем роль пользователя из токена
+
+  let query;
+  let queryParams;
+
+  // Если пользователь admin или librarian, то не нужно проверять, является ли он владельцем книги
+  if (userRole === 'admin' || userRole === 'librarian') {
+    query = `
+      SELECT * FROM Loans
+      WHERE loan_id = ? AND return_date IS NULL
+    `;
+    queryParams = [loanId];
+  } else {
+    // Если обычный пользователь, проверяем, не вернул ли он уже книгу
+    query = `
+      SELECT * FROM Loans
+      WHERE loan_id = ? AND user_id = ? AND return_date IS NULL
+    `;
+    queryParams = [loanId, userId];
+  }
+
+  // Выполняем запрос на проверку
+  connection.query(query, queryParams, (err, results) => {
+    if (err) throw err;
+
+    if (results.length > 0) {
+      // Обновляем запись в Loans с датой возврата
+      const updateLoanQuery = `
+        UPDATE Loans
+        SET return_date = NOW()
+        WHERE loan_id = ?
+      `;
+      connection.query(updateLoanQuery, [loanId], (err) => {
+        if (err) throw err;
+
+        // Получаем book_id для обновления книги
+        const bookId = results[0].book_id;
+
+        // Увеличиваем количество доступных книг и обновляем статус
+        const updateBookQuery = `
+          UPDATE Books
+          SET available_count = available_count + 1,
+              availability_status = IF(available_count + 1 > 0, 'available', 'unavailable')
+          WHERE book_id = ?
+        `;
+        connection.query(updateBookQuery, [bookId], (err) => {
+          if (err) throw err;
+
+          // Возвращаемся на страницу с книгами
+          res.redirect('/loans');
+        });
+      });
+    } else {
+      res.status(400).send('Вы не брал эту книгу или уже вернули её');
+    }
+  });
+});
+
+
 app.get('/books', authenticateToken, (req, res) => {
   const userId = req.user.userId;
   const filterAvailable = req.query.filterAvailable === 'true';
@@ -516,20 +689,27 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
   const limit = 25; 
   const offset = (page - 1) * limit; 
   const searchQuery = req.query.searchQuery || ''; 
+  const unreturnedOnly = req.query.unreturnedOnly === 'true';  // Получаем параметр фильтра невозвращенных книг
   
-  // Assuming the user's role is stored in req.user.role by the authorizeLibrarianOrAdmin middleware
-  const currentUserRole = req.user.role;  // This is where you get the role of the current user
-  
-  logger.info('Search Query:', searchQuery); // Log search query
+  const currentUserRole = req.user.role;  
 
-  const countQuery = `
+  logger.info('Search Query:', searchQuery); // Log search query
+  logger.info('Unreturned Only:', unreturnedOnly); // Log the unreturnedOnly value
+
+  // Основной запрос для подсчета общего количества записей
+  let countQuery = `
     SELECT COUNT(*) AS total 
     FROM Loans 
     JOIN Books ON Loans.book_id = Books.book_id
     JOIN Users ON Loans.user_id = Users.user_id
-    WHERE Books.title LIKE ? OR Users.name LIKE ?`;
+    WHERE (Books.title LIKE ? OR Users.name LIKE ?)`;
 
   const countParams = [`%${searchQuery}%`, `%${searchQuery}%`];
+
+  // Если активен фильтр невозвращенных книг, добавляем условие в запрос
+  if (unreturnedOnly) {
+    countQuery += " AND Loans.return_date IS NULL";
+  }
 
   connection.query(countQuery, countParams, (err, countResult) => {
     if (err) throw err;
@@ -537,7 +717,8 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
     const totalLoans = countResult[0].total;  
     const totalPages = Math.ceil(totalLoans / limit);  
 
-    const loansQuery = `
+    // Основной запрос для получения записей с пагинацией
+    let loansQuery = `
       SELECT 
         Loans.loan_id, 
         Books.title AS book_title, 
@@ -547,7 +728,8 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
       FROM Loans
       JOIN Books ON Loans.book_id = Books.book_id
       JOIN Users ON Loans.user_id = Users.user_id
-      WHERE Books.title LIKE ? OR Users.name LIKE ?
+      WHERE (Books.title LIKE ? OR Users.name LIKE ?)
+      ${unreturnedOnly ? "AND Loans.return_date IS NULL" : ""}  -- Фильтрация по return_date
       ORDER BY Loans.loan_id ASC  
       LIMIT ? OFFSET ?`;
 
@@ -570,11 +752,14 @@ app.get('/loans', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
         currentPage: page,
         totalPages: totalPages,
         searchQuery,
-        currentUserRole // Add the current user role to the template
+        unreturnedOnly,  // Передаем значение фильтра на страницу
+        currentUserRole
       });
+      
     });
   });
 });
+
 
 
 // Запуск сервера на порту 3000

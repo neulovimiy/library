@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Выдача книги</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center">Выдача книги (ID книги: <%= bookId %>)</h1>
+    
+    <table class="table scrollable-table">
+      <thead>
+        <tr>
+          <th>ID пользователя</th>
+          <th>Имя</th>
+          <th>Выбрать</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(function(user) { %>
+          <tr>
+            <td><%= user.user_id %></td>
+            <td><%= user.name %></td>
+            <td>
+              <form action="/books/issue/<%= bookId %>" method="POST">
+                <input type="hidden" name="userId" value="<%= user.user_id %>">
+                <button type="submit" class="btn btn-primary">Выбрать</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    
+    <br />
+    <a href="/books" class="btn btn-secondary">Назад</a>
+  </div>
+</body>
+</html>

@@ -9,40 +9,44 @@
 <body>
   <div class="edit-book-container">
     <h1>Редактирование книги</h1>
-  
+
     <form method="POST" action="/books/edit/<%= book.book_id %>">
       <label>Название</label>
       <input type="text" name="title" value="<%= book.title %>">
-  
+
       <label>Автор</label>
       <input type="text" name="author" value="<%= book.author %>">
-  
+
       <label>Жанр</label>
       <input type="text" name="genre" value="<%= book.genre %>">
-  
+
       <label>Год публикации</label>
       <input type="number" name="published_year" value="<%= book.published_year %>">
-  
+
       <label>Статус доступности</label>
       <select name="availability_status">
         <option value="available" <% if (book.availability_status === 'available') { %>selected<% } %>>available</option>
         <option value="unavailable" <% if (book.availability_status === 'unavailable') { %>selected<% } %>>unavailable</option>
       </select>
-  
+
       <label>Количество доступных копий</label>
       <input type="number" name="available_count" value="<%= book.available_count %>">
-  
-      <!-- Перемещаем поле описания ниже -->
+
       <label>Описание</label>
       <textarea name="summary" rows="4"><%= book.summary %></textarea>
-  
+
       <label>Количество страниц</label>
       <input type="number" name="page_count" value="<%= book.page_count %>">
-  
+
       <button type="submit" class="btn btn-success">Сохранить</button>
       <a href="/books" class="btn btn-secondary">Отмена</a>
     </form>
+
+    <!-- Кнопка удаления книги -->
+    <form method="POST" action="/books/delete/<%= book.book_id %>" onsubmit="return confirm('Вы уверены, что хотите удалить эту книгу?')">
+      <button type="submit" class="btn custom-delete-btn">Удалить книгу</button>
+    </form>
+    
   </div>
-  
 </body>
 </html>

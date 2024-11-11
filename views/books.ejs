@@ -90,18 +90,24 @@
             
             <td>
               <div class="action-buttons">
-                <% if (!book.loan_id && book.availability_status === 'available' && book.available_count > 0) { %>
+                <% if (user && (user.role === 'admin' || user.role === 'user') && !book.loan_id && book.availability_status === 'available' && book.available_count > 0) { %>
                   <form action="/books/take/<%= book.book_id %>" method="POST" class="d-inline">
                     <button type="submit" class="btn-take">Взять</button>
                   </form>
-                <% } else if (book.loan_id) { %>
+                <% } else if (user && (user.role === 'admin' || user.role === 'user') && book.loan_id) { %>
                   <form action="/books/return/<%= book.book_id %>" method="POST" class="d-inline">
                     <button type="submit" class="btn-return">Вернуть</button>
                   </form>
                 <% } else { %>
                   <button class="btn-disabled" disabled>Нельзя взять книгу</button>
                 <% } %>
-                                   
+            
+                <% if (user && (user.role === 'admin' || user.role === 'librarian') && book.availability_status === 'available') { %>
+                  <form action="/books/issue/<%= book.book_id %>" method="GET" class="d-inline">
+                    <button type="submit" class="btn-issue">Выдать</button>
+                  </form>
+                <% } %>
+                                           
                 <% if (user && user.role === 'admin') { %>
                   <a href="/books/edit/<%= book.book_id %>" class="edit-button">
                     <img src="/images/edit.png" alt="Редактировать" class="edit-icon">
@@ -109,6 +115,7 @@
                 <% } %>
               </div>
             </td>
+            
                        
           </tr>
         <% }); %>
@@ -117,13 +124,14 @@
 
     <!-- Кнопки администратора и "Выйти" -->
     <div class="admin-buttons">
-      <% if (user && user.role === 'admin') { %>
+      <% if (user && user.role === 'admin' ) { %>
         <a href="/loans" class="btn btn-gray">История</a>
         <a href="/users" class="btn btn-gray">Пользователи</a>
         <a href="/books/add" class="btn btn-gray">Добавить книгу</a>
       <% } else if (user && user.role === 'librarian') { %>
         <a href="/loans" class="btn btn-gray">История</a>
         <a href="/users" class="btn btn-gray">Пользователи</a>
+        <a href="/books/add" class="btn btn-gray">Добавить книгу</a>
       <% } %>
       <a href="/my-history" class="btn btn-gray">Моя история</a>
       <a href="/" class="btn btn-gray">Выйти</a>

@@ -41,7 +41,7 @@
         name="searchQuery"
         placeholder="Поиск по названию книги или имени пользователя" 
         class="form-control"
-        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+        value="<%= searchQuery %>"
         style="width: 100%; margin-bottom: 10px;"
       >
       <div style="display: flex; gap: 10px; align-items: center;">
@@ -53,10 +53,20 @@
           class="reset-icon"
           style="cursor: pointer; width: 20px; height: 20px;"
         >
+        <!-- Чекбокс для фильтрации невозвращенных книг -->
+        <label style="display: flex; align-items: center; gap: 5px;">
+          <input 
+            type="checkbox" 
+            id="unreturnedOnly" 
+            name="unreturnedOnly" 
+            value="true" 
+            <%= unreturnedOnly ? 'checked' : '' %>  
+          />
+          Только невозвращенные
+        </label>
       </div>
     </form>
     
-
     <!-- Обертка для таблицы с прокруткой -->
     <div class="table-wrapper">
       <table class="table">
@@ -79,6 +89,12 @@
               <td><%= loan.issue_date %></td>
               <td><%= loan.return_date %></td>
               <td>
+                <% if (loan.return_date === 'Не возвращена') { %>
+                  <!-- Кнопка для возврата книги, если она не возвращена -->
+                  <form action="/loans/return/<%= loan.loan_id %>" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success">Вернуть</button>
+                  </form>
+                <% } %>
                 <% if (currentUserRole === 'admin') { %>
                   <!-- Кнопка доступна только для админа -->
                   <form action="/loans/<%= loan.loan_id %>/delete" method="POST" class="d-inline">
@@ -90,11 +106,9 @@
                   <p>Нет доступа</p>
                 <% } %>
               </td>
-              
             </tr>
           <% }); %>
         </tbody>
-        
       </table>
     </div>
     
@@ -104,15 +118,10 @@
   </div>
 
   <script>
-    const loans = <%- JSON.stringify(loans) %>; // Преобразуем массив loans в JSON
+    function resetSearch() {
+      // Перенаправление на /loans без параметров для сброса поиска
+      window.location.href = '/loans';
+    }
   </script>
-  <script src="/js/books.js"></script>
 </body>
-<script>
-  function resetSearch() {
-    // Перенаправление на /loans без параметров для сброса поиска
-    window.location.href = '/loans';
-  }
-</script>
-
 </html>
