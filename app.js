@@ -297,6 +297,44 @@ app.post('/books/delete/:id', authenticateToken, (req, res) => {
   });
 });
 
+// Маршрут для смены роли пользователя
+app.post('/users/:id/role', authenticateToken, (req, res) => {
+  const userIdToUpdate = req.params.id;
+  const newRole = req.body.role;
+  const currentUserRole = req.user.role;
+
+  // Проверяем, что только администратор может менять роль
+  if (currentUserRole !== 'admin') {
+    return res.status(403).send('Доступ запрещен');
+  }
+
+  // Проверяем, что администратор не может сменить свою роль
+  if (userIdToUpdate === req.user.userId) {
+    return res.status(400).send('Невозможно сменить роль для вашего аккаунта');
+  }
+
+  // Убедимся, что роль, на которую мы меняем, допустима
+  if (newRole !== 'user' && newRole !== 'librarian' && newRole !== 'admin') {
+    return res.status(400).send('Неверная роль');
+  }
+
+  // Обновляем роль пользователя в базе данных
+  const query = `
+    UPDATE Users
+    SET role = ?
+    WHERE user_id = ?
+  `;
+  connection.query(query, [newRole, userIdToUpdate], (err) => {
+    if (err) {
+      console.error('Ошибка при обновлении роли:', err);
+      return res.status(500).send('Ошибка сервера');
+    }
+
+    // Перенаправляем на страницу пользователей
+    res.redirect('/users');
+  });
+});
+
 app.get('/books/issue/:id', authenticateToken, (req, res) => {
   const bookId = req.params.id;
 
@@ -604,10 +642,16 @@ app.get('/users', authenticateToken, authorizeLibrarianOrAdmin, (req, res) => {
       user.registration_date = new Date(user.registration_date).toLocaleString();
     });
 
-    // Отправляем данные на страницу вместе с ролью текущего пользователя
-    res.render('users', { users: results, currentUserRole: req.user.role, searchQuery });
+    // Отправляем данные на страницу вместе с ролью и ID текущего пользователя
+    res.render('users', { 
+      users: results, 
+      currentUserRole: req.user.role, 
+      currentUserId: req.user.user_id,  // Добавляем ID текущего пользователя
+      searchQuery 
+    });
   });
 });
+
 
 
 // Маршрут для отображения страницы редактирования
@@ -654,22 +698,88 @@ app.post('/books/edit/:id', async (req, res) => {
   }
 });
 
-
-app.post('/users/:id/delete', (req, res) => {
+app.post('/users/:id/delete', authenticateToken, (req, res) => {
   const userId = req.params.id;
+  const currentUserId = req.user.userId;
+  const currentUserRole = req.user.role; // Получаем роль текущего пользователя
 
-  // Сначала удаляем все займы пользователя
-  connection.query('DELETE FROM loans WHERE user_id = ?', [userId], (err) => {
-    if (err) return res.status(500).send('Ошибка при удалении займов.');
+  if (!currentUserId) {
+    return res.status(401).json({ message: 'Пользователь не авторизован.' });
+  }
 
-    // Теперь удаляем пользователя
-    connection.query('DELETE FROM users WHERE user_id = ?', [userId], (err) => {
-      if (err) return res.status(500).send('Ошибка при удалении пользователя.');
-      
-      res.redirect('/users');
+  // Если текущий пользователь пытается удалить самого себя, разрешаем это
+  if (userId === currentUserId) {
+    return deleteUser(userId, res);
+  }
+
+  // Если текущий пользователь — администратор, то проверяем роль удаляемого
+  if (currentUserRole === 'admin') {
+    connection.query('SELECT role FROM users WHERE user_id = ?', [userId], (err, results) => {
+      if (err) {
+        console.error("Ошибка при проверке роли пользователя:", err);
+        return res.status(500).json({ message: 'Ошибка при удалении пользователя.' });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'Пользователь не найден.' });
+      }
+
+      const deletedUserRole = results[0].role;
+
+      // Администратор не может удалять другого администратора
+      if (deletedUserRole === 'admin') {
+        return res.status(403).json({ message: 'Вы не можете удалить другого администратора.' });
+      }
+
+      // Администратор не может удалять пользователя с ролью boss
+      if (deletedUserRole === 'boss') {
+        return res.status(403).json({ message: 'Вы не можете удалить пользователя с ролью boss.' });
+      }
+
+      // Если удаляемый пользователь — user или librarian, продолжаем удаление
+      return deleteUser(userId, res);
     });
-  });
+  } else {
+    return res.status(403).json({ message: 'У вас нет прав на удаление этого пользователя.' });
+  }
+
+  function deleteUser(userId, res) {
+    // Удаление записей из user_credentials перед удалением пользователя
+    connection.query('DELETE FROM user_credentials WHERE user_id = ?', [userId], (err) => {
+      if (err) {
+        console.error("Ошибка при удалении записей в user_credentials:", err);
+        return res.status(500).json({ message: 'Ошибка при удалении учетных данных пользователя.' });
+      }
+
+      // Удаление займов пользователя перед удалением самого пользователя
+      connection.query('DELETE FROM loans WHERE user_id = ?', [userId], (err) => {
+        if (err) {
+          console.error("Ошибка при удалении займов:", err);
+          return res.status(500).json({ message: 'Ошибка при удалении займов.' });
+        }
+
+        // Удаление пользователя
+        connection.query('DELETE FROM users WHERE user_id = ?', [userId], (err) => {
+          if (err) {
+            console.error("Ошибка при удалении пользователя:", err);
+            return res.status(500).json({ message: 'Ошибка при удалении пользователя.' });
+          }
+
+          // Если администратор удаляет сам себя, завершить сессию и перенаправить на страницу входа
+          if (userId === currentUserId) {
+            res.clearCookie('token');
+            return res.redirect('/');
+          }
+
+          // Перенаправление на список пользователей после успешного удаления
+          return res.redirect('/users');
+        });
+      });
+    });
+  }
 });
+
+
 
 // Удаление записи о займе
 app.post('/loans/:id/delete', (req, res) => {

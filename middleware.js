@@ -9,12 +9,12 @@ function authenticateToken(req, res, next) {
     return res.redirect('/login');
   }
 
-  jwt.verify(token, secretKey, (err, user) => {
+  jwt.verify(token, secretKey, (err, decoded) => {
     if (err) {
       console.log("Ошибка проверки токена:", err.message);
       return res.redirect('/login');
     }
-    req.user = user;
+    req.user = { userId: decoded.userId, role: decoded.role };
     console.log("Пользователь успешно аутентифицирован:", req.user);
     next();
   });
@@ -23,18 +23,18 @@ function authenticateToken(req, res, next) {
 function authorizeAdmin(req, res, next) {
   if (req.user.role !== 'admin') {
     console.log("Доступ запрещен: пользователь не является администратором");
-    return res.status(403).send('Доступ запрещен');
+    return res.status(403).json({ message: 'Доступ запрещен' });
   }
   next();
 }
 
 function authorizeLibrarianOrAdmin(req, res, next) {
-  if (req.user.role === 'librarian' || req.user.role === 'admin') {
+  if (['librarian', 'admin','boss'].includes(req.user.role)) {
     console.log("Доступ разрешен для роли:", req.user.role);
     return next();
   }
   console.log("Доступ запрещен: роль пользователя не соответствует требуемым правам");
-  return res.status(403).send('Доступ запрещен');
+  return res.status(403).json({ message: 'Доступ запрещен' });
 }
 
 module.exports = { authenticateToken, authorizeAdmin, authorizeLibrarianOrAdmin };

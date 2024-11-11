@@ -1,11 +1,10 @@
-<!-- views/users.ejs -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Список пользователей</title>
-  <link rel="stylesheet" href="/css/styles.css"> <!-- Подключаем стили -->
+  <link rel="stylesheet" href="/css/styles.css"> 
 </head>
 <body>
   <div class="container">
@@ -53,18 +52,42 @@
             <td><%= user.role %></td>
             <td><%= user.registration_date %></td>
             <td>
-              <form action="/users/<%= user.user_id %>/delete" method="POST" class="d-inline">
-                <button type="submit" class="btn btn-danger" <% if (currentUserRole !== 'admin') { %>disabled<% } %>>Удалить</button>
-              </form>
-              <% if (currentUserRole === 'librarian') { %>
-                <div class="text-muted">Нет доступа</div>
+              <% if (currentUserRole === 'admin') { %>
+                <!-- Если это не роль boss, показываем функции -->
+                <% if (user.role !== 'boss') { %>
+                  <% if (user.user_id === currentUserId) { %>
+                    <form action="/users/<%= user.user_id %>/delete" method="POST" class="d-inline" style="display: flex; gap: 10px;">
+                      <button type="submit" class="btn btn-danger" style="flex-grow: 1;">Удалить свою учетную запись</button>
+                    </form>
+                  <% } else { %>
+                    <!-- Если это не администратор, разрешаем удалить пользователя -->
+                    <form action="/users/<%= user.user_id %>/delete" method="POST" class="d-inline" style="display: flex; gap: 10px;">
+                      <button type="submit" class="btn btn-danger" style="flex-grow: 1;">Удалить</button>
+                    </form>
+                  <% } %>
+                  
+                  <!-- Опция смены роли доступна только для не-администраторов -->
+                  <% if (user.role !== 'admin') { %>
+                    <form action="/users/<%= user.user_id %>/role" method="POST" class="d-inline" style="display: flex; gap: 10px;">
+                      <select name="role" class="form-control" style="flex-grow: 1;">
+                        <option value="user" <% if (user.role === 'user') { %>selected<% } %>>User</option>
+                        <option value="librarian" <% if (user.role === 'librarian') { %>selected<% } %>>Librarian</option>
+                        <option value="admin" <% if (user.role === 'admin') { %>selected<% } %>>Admin</option>
+                      </select>
+                      <button type="submit" class="btn btn-warning" style="flex-grow: 1;">Сменить роль</button>
+                    </form>
+                  <% } %>
+                <% } else { %>
+                  <!-- Если роль пользователя "boss", функции скрыты -->
+                  <span>Функции недоступны для пользователя с ролью boss</span>
+                <% } %>
               <% } %>
             </td>
+            
           </tr>
         <% }); %>
       </tbody>
     </table>
-    
     
     <br />
     <a href="/books" class="btn btn-secondary">Назад</a>
@@ -73,7 +96,6 @@
 </body>
 <script>
   function resetSearch() {
-    // Перенаправление на /users без параметров для сброса поиска
     window.location.href = '/users';
   }
 </script>
